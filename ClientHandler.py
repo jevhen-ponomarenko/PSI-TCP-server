@@ -36,8 +36,8 @@ class ClientHandler(threading.Thread):
             try:
                 data = self.connection.recv(1)
             except Exception as e:
-                print(e)
-                print(e.message)
+                print('error recv')
+                data = b'f'
             if not self.buffer.add_byte(data):
                 res = self.handle_message(self.buffer.get_last_message())
                 if not res:
