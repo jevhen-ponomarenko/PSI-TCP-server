@@ -1,5 +1,6 @@
 # #!/usr/bin/env python3
 import socket
+
 import sys
 import threading
 
@@ -9,7 +10,7 @@ HOST = '127.0.0.1' # all availabe interfaces
 PORT = 3000 # arbitrary non privileged port
 
 try:
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
 except socket.error as msg:
     print("Could not create socket. Error Code: ", str(msg[0]), "Error: ", msg[1])
     sys.exit(0)
