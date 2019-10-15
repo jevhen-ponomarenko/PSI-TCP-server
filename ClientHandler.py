@@ -33,11 +33,7 @@ class ClientHandler(threading.Thread):
 
     def run(self,):
         while not self.stop_event.is_set():
-            try:
-                data = self.connection.recv(1)
-            except Exception as e:
-                print('error recv')
-                data = b'f'
+            data = self.connection.recvmsg(1)
             if not self.buffer.add_byte(data):
                 res = self.handle_message(self.buffer.get_last_message())
                 if not res:
