@@ -6,7 +6,7 @@ import threading
 
 from ClientHandler import ClientHandler
 
-HOST = '127.0.0.1' # all availabe interfaces
+HOST = '0.0.0.0' # all availabe interfaces
 PORT = 3000 # arbitrary non privileged port
 
 try:
