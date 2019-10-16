@@ -41,7 +41,6 @@ while True:
     event = threading.Event()
     client = ClientHandler(conn)
     client.start()
-    client.join(timeout=15.0)
     # if client.is_alive():
     #     client.join()
 

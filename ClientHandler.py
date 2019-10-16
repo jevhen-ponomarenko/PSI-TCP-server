@@ -17,7 +17,6 @@ class ClientHandler(threading.Thread):
     BAD_CHECKSUM = '300 BAD CHECKSUM\r\n'
 
     def __init__(self, connection: socket):
-        super().__init__()
         self.connection = connection
         self.buffer = Buffer()
         self.step = 0
@@ -25,6 +24,7 @@ class ClientHandler(threading.Thread):
         self.stop_event = threading.Event()
         self.bad_checksum = threading.Event()
         self.syntax = threading.Event()
+        super().__init__()
 
     def end_with_message(self, message):
         self.connection.sendall(message.encode())
@@ -33,7 +33,7 @@ class ClientHandler(threading.Thread):
 
     def run(self,):
         while not self.stop_event.is_set():
-            data = self.connection.recvmsg(1)
+            data = self.connection.recv(1)
             if not self.buffer.add_byte(data):
                 res = self.handle_message(self.buffer.get_last_message())
                 if not res:
