@@ -1,0 +1,2 @@
+class MsgTooLong(Exception):
+    pass
