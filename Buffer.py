@@ -1,36 +1,68 @@
 import queue
+from _errors import MsgTooLong
+
+class RobotNotInUsername(Exception):
+    pass
+class InfoOrFoto(Exception):
+    pass
 
 class Buffer:
     def __init__(self):
         self.buffer = bytearray()
-        self.msg_queue = queue.Queue(0)
+        self.photo_length_buffer = bytearray()
+        self.state = 0  # only 0 and 1 is allowed
+        self.password = None
+        self.last_byte = None
+        self.second_last_byte = None
+        self.counting_pass = False
+        self.counting_checksum = False
 
-    def is_full(self):
-        return len(self.buffer) >= 1024
-
-    def add_byte(self, byte: bytes):
+    def process_byte(self, byte: bytes) -> bool or int:
         # """
         # Adds byte to a buffer, takes care of handling escape characters
         # :param byte:
         # :return: True on success, bytesarray() on escape seq
         # """
-        # if self.is_full():
-        #     self.msg_queue.put((self.flush(), None))
-        #     return True
-        if byte == b'\n' and self.buffer[-1:] == b'\r':  # escape sequence
-            self.msg_queue.put(self.flush())
-            return False
-        else:
-            self.buffer.extend(byte)
-            return True
+        if self.state == 0:
+            if self.counting_pass and byte == b'\n' and self.last_byte == b'\r':  # escape sequence
+                self.state = 1
+                self.counting_pass = False
+                return self.password
 
-    def flush(self):
-        ret = self.buffer[:-1]
-        self.buffer = bytearray()
-        return ret
+            if not self.counting_pass:
+                self.buffer.extend(byte)
+                if len(self.buffer) == 5:
+                    if not self.buffer == bytearray(b'Robot'):
+                        raise RobotNotInUsername()
+                    else:
+                        self.counting_pass = True
+                        return None
+            else:
+                self.last_byte = byte
+                self.password += ord(byte)
+                return None
 
-    def get_last_message(self):
-        try:
-            return self.msg_queue.get()
-        except Exception as e:
-            print(e)
+        elif self.state == 1:
+            if byte == b'\n' and self.last_byte == b'\r':  # escape sequence
+                self.state = 2
+                return self.buffer[:-1]
+            else:
+                self.buffer.extend(byte)
+                return None
+
+        elif self.state == 2:
+            # if self.counting_checksum and byte == b'\n' and self.last_byte == b'\r':  # escape sequence
+            #     self.state = 1
+            #     self.counting_pass = False
+            #     return self.password
+
+            if not self.counting_checksum:
+                self.buffer.extend(byte)
+                if len(self.buffer) == 5:
+                    if not self.buffer == bytearray(b'INFO ') or not self.buffer == bytearray(b'FOTO '):
+                        raise InfoOrFoto()
+                elif len(self.buffer) > 5 and byte != b' ':
+                    self.photo_length_buffer.extend(byte)
+                elif byte == b' ':
+                    self.counting_checksum = True
+                # TODO case of INFO, compute the checksum on the go, ...
