@@ -27,21 +27,23 @@ class ClientHandler(threading.Thread):
     def end_with_message(self, message):
         self.connection.sendall(message.encode())
         self.connection.close()
+        self.stop_event.set()
 
     def run(self,):
         while not self.stop_event.is_set():
             data = self.connection.recv(1)
             if self.buffer.state == 0:
-                username_sum = self.buffer.precess_byte(data)
+                username_sum = self.buffer.process_byte(data)
                 if username_sum:
                     self.username = username_sum
                     self.connection.sendall(self.FIRST_MESSAGE.encode())
             elif self.buffer.state == 1:
-                password = self.buffer.precess_byte(data)
-                if password and int(password) == self.username:
-                    self.connection.sendall(self.SECOND_MESSAGE.encode())
-                else:
-                    self.connection.sendall(self.LOGIN_FAILED.encode())
+                password = self.buffer.process_byte(data)
+                if password:
+                    if int(password) == self.username:
+                        self.end_with_message(self.SECOND_MESSAGE)
+                    else:
+                        self.end_with_message(self.LOGIN_FAILED)
             elif self.buffer.state == 2:
                 pass
         return
