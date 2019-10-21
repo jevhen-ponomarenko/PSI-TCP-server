@@ -49,7 +49,7 @@ class ClientHandler(threading.Thread):
                 password = self.buffer.process_byte(data)
                 if password:
                     if int(password) == self.username:
-                        self.connection.sendall(self.SECOND_MESSAGE)
+                        self.connection.sendall(self.SECOND_MESSAGE.encode())
                     else:
                         self.end_with_message(self.LOGIN_FAILED)
             elif self.buffer.state == 2:
