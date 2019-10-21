@@ -77,14 +77,14 @@ class Buffer:
                 elif byte == b' ':
                     self.counting_checksum = True
             elif self.photo:
-                if self.read_photo_bytes <= int(self.photo_length_buffer): # reading photo data
+                if self.read_photo_bytes <= int(self.photo_length_buffer):  # reading photo data
                     self.checksum += ord(byte)
                     self.read_photo_bytes += 1
-                elif self.read_photo_bytes <= int(self.photo_length_buffer) + 4: # reading last 4 bytes
+                elif self.read_photo_bytes <= int(self.photo_length_buffer) + 4:  # reading last 4 bytes
                     self.counting_checksum = False
                     self.sent_checksum.extend(byte)
                     self.read_photo_bytes += 1
-                    self.buffer = bytearray() # flush the buffer
+                    self.buffer = bytearray()  # flush the buffer
                 elif self.read_photo_bytes <= int(self.photo_length_buffer) + 6:
                     self.buffer.extend(byte)
                 else:
@@ -92,8 +92,14 @@ class Buffer:
                         check = struct.unpack('>HH', self.sent_checksum)
                         check = str(check[0]) + str(check[1])
                         check = int(check)
-
                         return self.checksum == check
                     else:
                         raise FotoException()
-                   
+            elif self.info:  # reading INFO
+                if byte == b'\n' and self.last_byte == b'\r':  # escape sequence
+                    return True
+                else:
+                    self.last_byte = byte
+                    self.buffer.extend(byte)
+            else:
+                raise InfoOrFoto()

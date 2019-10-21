@@ -5,6 +5,8 @@ from typing import List
 
 from Buffer import Buffer
 
+from ponomyev_tcp_server.Buffer import RobotNotInUsername, InfoOrFoto, FotoException
+
 
 class ClientHandler(threading.Thread):
     FIRST_MESSAGE = '201 PASSWORD\r\n'
@@ -22,6 +24,7 @@ class ClientHandler(threading.Thread):
         self.step = 0
         self.username = None
         self.stop_event = threading.Event()
+        self.username_wrong = None
         super().__init__()
 
     def end_with_message(self, message):
@@ -33,24 +36,38 @@ class ClientHandler(threading.Thread):
         while not self.stop_event.is_set():
             data = self.connection.recv(1)
             if self.buffer.state == 0:
-                username_sum = self.buffer.process_byte(data)
-                if username_sum:
-                    self.username = username_sum
-                    self.connection.sendall(self.FIRST_MESSAGE.encode())
+                try:
+                    username_sum = self.buffer.process_byte(data)
+                    if username_sum:
+                        self.username = username_sum
+                        self.connection.sendall(self.FIRST_MESSAGE.encode())
+                except RobotNotInUsername:
+                    self.username_wrong = True
             elif self.buffer.state == 1:
+                if self.username_wrong:
+                    self.end_with_message(self.LOGIN_FAILED)
                 password = self.buffer.process_byte(data)
                 if password:
                     if int(password) == self.username:
-                        self.end_with_message(self.SECOND_MESSAGE)
+                        self.connection.sendall(self.SECOND_MESSAGE)
                     else:
                         self.end_with_message(self.LOGIN_FAILED)
             elif self.buffer.state == 2:
-                pass
+                try:
+                    reading_succ = self.buffer.process_byte(data)
+                    if reading_succ:
+                        self.connection.sendall(self.SECOND_MESSAGE.encode())
+                    else:
+                        self.connection.sendall(self.BAD_CHECKSUM.encode())
+                except FotoException:
+                    self.end_with_message(self.SYNTAX_ERROR)
+                except InfoOrFoto:
+                    
+
         return
 
     def join(self, **kwargs):
         if not self.stop_event.is_set():
-            self.connection.sendall(self.TIMEOUT.encode())
             self.stop_event.set()
         super().join(**kwargs)
         
