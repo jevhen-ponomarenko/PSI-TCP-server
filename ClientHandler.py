@@ -5,7 +5,7 @@ from typing import List
 
 from Buffer import Buffer
 
-from Buffer import RobotNotInUsername, InfoOrFoto, FotoException
+from Buffer import RobotNotInUsername, InfoOrFoto, FotoException, BadCheckSum
 
 
 class ClientHandler(threading.Thread):
@@ -57,8 +57,8 @@ class ClientHandler(threading.Thread):
                     reading_succ = self.buffer.process_byte(data)
                     if reading_succ:
                         self.connection.sendall(self.SECOND_MESSAGE.encode())
-                    else:
-                        self.connection.sendall(self.BAD_CHECKSUM.encode())
+                except BadCheckSum:
+                    self.connection.sendall(self.BAD_CHECKSUM.encode())
                 except FotoException:
                     self.end_with_message(self.SYNTAX_ERROR)
                 except InfoOrFoto:

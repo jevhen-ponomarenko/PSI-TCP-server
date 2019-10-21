@@ -29,9 +29,6 @@ except socket.error as msg:
 s.listen(10)
 print("Listening...")
 
-# The code below is what you're looking for ############
-
-
 while True:
     # blocking call, waits to accept a connection
     conn, addr = s.accept()

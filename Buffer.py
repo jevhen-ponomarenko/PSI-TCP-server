@@ -6,6 +6,8 @@ class InfoOrFoto(Exception):
     pass
 class FotoException(Exception):
     pass
+class BadCheckSum(Exception):
+    pass
 
 class Buffer:
     def __init__(self):
@@ -62,22 +64,32 @@ class Buffer:
 
         elif self.state == 2:
             if not self.counting_checksum:
-                self.buffer.extend(byte)
-                if len(self.buffer) == 5:
-                    if not self.buffer == bytearray(b'INFO ') or not self.buffer == bytearray(b'FOTO '):
+
+                if len(self.buffer) < 5:
+                    self.buffer.extend(byte)
+                elif len(self.buffer) == 5:
+                    if self.buffer != bytearray(b'INFO ') and self.buffer != bytearray(b'FOTO '):
                         raise InfoOrFoto()
                     elif self.buffer == bytearray(b'FOTO '):
-                        self.info = False
                         self.photo = True
+                        self.photo_length_buffer.extend(byte)  # one byte of length is loaded in memory now
+                        self.buffer.extend(byte)  # too keep this bullshit working
                     elif self.buffer == bytearray(b'INFO '):
-                        self.info = True
                         self.photo = False
-                elif len(self.buffer) > 5 and byte != b' ':
-                    self.photo_length_buffer.extend(byte)
-                elif byte == b' ':
+                        self.buffer.extend(byte)
+                elif byte == b' ' and self.photo:
                     self.counting_checksum = True
-            elif self.photo:
-                if self.read_photo_bytes <= int(self.photo_length_buffer):  # reading photo data
+                elif byte != b' ' and self.photo:
+                    self.photo_length_buffer.extend(byte)
+                elif self.last_byte == b'\r' and byte == b'\n':
+                    self.buffer = bytearray()
+                    return True
+                elif not self.photo:
+                    self.last_byte = byte
+                else:
+                    raise InfoOrFoto()
+            elif self.counting_checksum and self.photo:
+                if self.read_photo_bytes < int(self.photo_length_buffer):  # reading photo data
                     self.checksum += ord(byte)
                     self.read_photo_bytes += 1
                 elif self.read_photo_bytes <= int(self.photo_length_buffer) + 4:  # reading last 4 bytes
@@ -92,10 +104,13 @@ class Buffer:
                         check = struct.unpack('>HH', self.sent_checksum)
                         check = str(check[0]) + str(check[1])
                         check = int(check)
-                        return self.checksum == check
+                        if self.checksum == check:
+                            return True
+                        else:
+                            raise BadCheckSum()
                     else:
                         raise FotoException()
-            elif self.info:  # reading INFO
+            elif not self.photo:  # reading INFO
                 if byte == b'\n' and self.last_byte == b'\r':  # escape sequence
                     return True
                 else:
