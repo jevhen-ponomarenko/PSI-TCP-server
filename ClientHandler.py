@@ -3,9 +3,9 @@ import threading
 from functools import reduce
 from typing import List
 
-from Buffer import Buffer
+from .Buffer import Buffer
 
-from ponomyev_tcp_server.Buffer import RobotNotInUsername, InfoOrFoto, FotoException
+from .Buffer import RobotNotInUsername, InfoOrFoto, FotoException
 
 
 class ClientHandler(threading.Thread):
