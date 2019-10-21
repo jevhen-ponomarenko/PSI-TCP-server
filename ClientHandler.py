@@ -62,8 +62,7 @@ class ClientHandler(threading.Thread):
                 except FotoException:
                     self.end_with_message(self.SYNTAX_ERROR)
                 except InfoOrFoto:
-                    
-
+                    self.end_with_message(self.SYNTAX_ERROR)
         return
 
     def join(self, **kwargs):
