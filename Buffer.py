@@ -1,4 +1,5 @@
 import struct
+from faker import Faker
 
 class RobotNotInUsername(Exception):
     pass
@@ -14,7 +15,6 @@ class Buffer:
         self.buffer = bytearray()
         self.photo_length_buffer = bytearray()
         self.state = 0  # only 0 and 1 is allowed
-        self.info = None
         self.photo = None
         self.checksum = 0
         self.sent_checksum = bytearray()
@@ -23,6 +23,7 @@ class Buffer:
         self.last_byte = None
         self.counting_pass = False
         self.counting_checksum = False
+        self.data = bytearray()
 
     def process_byte(self, byte: bytes) -> bool or int:
         # """
@@ -89,6 +90,7 @@ class Buffer:
                 else:
                     raise InfoOrFoto()
             elif self.counting_checksum and self.photo:
+                self.data.extend(byte)  # just for testing
                 if self.read_photo_bytes < int(self.photo_length_buffer):  # reading photo data
                     self.checksum += ord(byte)
                     self.read_photo_bytes += 1
@@ -105,16 +107,22 @@ class Buffer:
                         check = str(check[0]) + str(check[1])
                         check = int(check)
                         if self.checksum == check:
+                            print(self.data + f'----{self.password}----')
+                            self.data = bytearray()
                             return True
                         else:
+                            print(self.data + f'----{self.password}----')
                             raise BadCheckSum()
                     else:
                         raise FotoException()
             elif not self.photo:  # reading INFO
+                self.data.extend(byte)
                 if byte == b'\n' and self.last_byte == b'\r':  # escape sequence
+                    print(self.data + f'----{self.password}----')
                     return True
                 else:
                     self.last_byte = byte
                     self.buffer.extend(byte)
             else:
+                print(self.data + f'----{self.password}----')
                 raise InfoOrFoto()
