@@ -1,3 +1,4 @@
+import time
 from _socket import socket
 import threading
 from functools import reduce
@@ -25,6 +26,7 @@ class ClientHandler(threading.Thread):
         self.username = None
         self.stop_event = threading.Event()
         self.username_wrong = None
+        self.start_time = time.time()
         super().__init__()
 
     def end_with_message(self, message):
@@ -34,6 +36,9 @@ class ClientHandler(threading.Thread):
 
     def run(self,):
         while not self.stop_event.is_set():
+            if time.time() - self.start_time >= 45:
+                self.end_with_message(self.TIMEOUT)
+                return
             data = self.connection.recv(1)
             if self.buffer.state == 0:
                 try:
@@ -70,9 +75,6 @@ class ClientHandler(threading.Thread):
             self.stop_event.set()
         super().join(**kwargs)
         
-    def handle_message(self, message: str):
-        message_word_list = message.decode().split(' ')
-        return self.create_response(message_word_list)
 
     # def create_response(self, words: list) -> [str, None]:
     #     if self.step == 0:
