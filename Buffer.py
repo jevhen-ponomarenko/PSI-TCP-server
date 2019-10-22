@@ -1,5 +1,4 @@
 import struct
-from faker import Faker
 
 class RobotNotInUsername(Exception):
     pass
@@ -118,7 +117,10 @@ class Buffer:
             elif not self.photo:  # reading INFO
                 self.data.extend(byte)
                 if byte == b'\n' and self.last_byte == b'\r':  # escape sequence
-                    print(self.data + f'----{self.password}----')
+                    print(f'--------'*5)
+                    print(f'----{self.password}----')
+                    print(self.data)
+                    print(f'--------' * 5)
                     return True
                 else:
                     self.last_byte = byte
