@@ -65,10 +65,13 @@ class ClientHandler(threading.Thread):
                         self.connection.sendall(self.SECOND_MESSAGE.encode())
                 except BadCheckSum:
                     self.connection.sendall(self.BAD_CHECKSUM.encode())
+                    return
                 except FotoException:
                     self.end_with_message(self.SYNTAX_ERROR)
+                    return
                 except InfoOrFoto:
                     self.end_with_message(self.SYNTAX_ERROR)
+                    return
         print('------------' * 5)
         print(vars(self.buffer))
         print('------------' * 5)

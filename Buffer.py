@@ -83,9 +83,12 @@ class Buffer:
                 elif byte == b' ' and self.photo:
                     self.counting_checksum = True
                 elif byte != b' ' and self.photo:
+                    if self.last_byte and self.last_byte == b'\r' and byte == b'\n':
+                        raise FotoException()
+                    self.last_byte = byte
                     self.photo_length_buffer.extend(byte)
                 elif self.last_byte == b'\r' and byte == b'\n':
-                    self.buffer = bytearray()
+                    self.buffer = bytearray()  # i think its INFO case
                     return True
                 elif not self.photo:
                     self.last_byte = byte
@@ -93,30 +96,39 @@ class Buffer:
                     raise InfoOrFoto()
             elif self.counting_checksum and self.photo:
                 self.data.extend(byte)  # just for testing
+                if self.last_byte and self.last_byte == b'\r' and byte == b'\n' and self.read_photo_bytes < int(self.photo_length_buffer):
+                    raise FotoException()
+                self.last_byte = byte
                 if self.read_photo_bytes < int(self.photo_length_buffer):  # reading photo data
                     self.checksum += ord(byte)
                     self.read_photo_bytes += 1
-                elif self.read_photo_bytes <= int(self.photo_length_buffer) + 4:  # reading last 4 bytes
-                    self.counting_checksum = False
+                elif self.read_photo_bytes < int(self.photo_length_buffer) + 4:  # reading last 4 bytes
+
                     self.sent_checksum.extend(byte)
                     self.read_photo_bytes += 1
                     self.buffer = bytearray()  # flush the buffer
-                elif self.read_photo_bytes <= int(self.photo_length_buffer) + 6:
+                elif self.read_photo_bytes < int(self.photo_length_buffer) + 6:
                     self.buffer.extend(byte)
-                else:
-                    if self.buffer == b'\r\n':
-                        check = struct.unpack('>HH', self.sent_checksum)
-                        check = str(check[0]) + str(check[1])
-                        check = int(check)
-                        if self.checksum == check:
-                            print(self.data + f'----{self.password}----')
-                            self.data = bytearray()
-                            return True
+                    self.read_photo_bytes += 1
+                    if self.read_photo_bytes == int(self.photo_length_buffer) + 6:
+                        if self.buffer == b'\r\n':
+                            check = struct.unpack('>HH', self.sent_checksum)
+                            check = str(check[0]) + str(check[1])
+                            check = int(check)
+                            if self.checksum == check:
+                                print(str(self.data) + f'----{self.password}----')
+                                self.data = bytearray()
+                                self.counting_checksum = None
+                                return True
+                            else:
+                                print(str(self.data) + f'----{self.password}----')
+                                self.counting_checksum = None
+                                raise BadCheckSum()
                         else:
-                            print(self.data + f'----{self.password}----')
-                            raise BadCheckSum()
-                    else:
-                        raise FotoException()
+                            self.counting_checksum = None
+                            raise FotoException()
+                else:
+                    raise FotoException()
             elif not self.photo:  # reading INFO
                 self.data.extend(byte)
                 if byte == b'\n' and self.last_byte == b'\r':  # escape sequence
