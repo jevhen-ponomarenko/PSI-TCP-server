@@ -66,6 +66,9 @@ class Buffer:
             if not self.counting_checksum:
 
                 if len(self.buffer) < 5:
+                    if self.last_byte and self.last_byte == b'\r' and byte == b'\n':
+                        raise InfoOrFoto()
+                    self.last_byte = byte
                     self.buffer.extend(byte)
                 elif len(self.buffer) == 5:
                     if self.buffer != bytearray(b'INFO ') and self.buffer != bytearray(b'FOTO '):
