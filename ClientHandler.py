@@ -38,6 +38,7 @@ class ClientHandler(threading.Thread):
         while not self.stop_event.is_set():
             if time.time() - self.start_time >= 45:
                 self.end_with_message(self.TIMEOUT)
+                print(f'stopped {self.ident} thread: TIMEOUT')
                 return
             data = self.connection.recv(1)
             if self.buffer.state == 0:
@@ -68,6 +69,7 @@ class ClientHandler(threading.Thread):
                     self.end_with_message(self.SYNTAX_ERROR)
                 except InfoOrFoto:
                     self.end_with_message(self.SYNTAX_ERROR)
+        print(f'stopped {self.ident} thread: END')
         return
 
     def join(self, **kwargs):
