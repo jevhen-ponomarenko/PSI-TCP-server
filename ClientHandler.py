@@ -36,7 +36,7 @@ class ClientHandler(threading.Thread):
 
     def run(self,):
         while not self.stop_event.is_set():
-            if time.time() - self.start_time >= 145:
+            if time.time() - self.start_time >= 45:
                 self.end_with_message(self.TIMEOUT)
                 print(f'stopped {self.ident} thread: TIMEOUT')
                 return
@@ -57,14 +57,26 @@ class ClientHandler(threading.Thread):
                         int_from_password = int(password)
                     except ValueError:
                         self.end_with_message(self.LOGIN_FAILED)
+                        print('------------' * 5)
+                        print(vars(self.buffer))
+                        print('------------' * 5)
+                        print(f'stopped {self.ident} thread: END')
                         return
                     if self.username_wrong:
                         self.end_with_message(self.LOGIN_FAILED)
+                        print('------------' * 5)
+                        print(vars(self.buffer))
+                        print('------------' * 5)
+                        print(f'stopped {self.ident} thread: END')
                         return
                     if int_from_password == self.username:
                         self.connection.sendall(self.SECOND_MESSAGE.encode())
                     else:
                         self.end_with_message(self.LOGIN_FAILED)
+                        print('------------' * 5)
+                        print(vars(self.buffer))
+                        print('------------' * 5)
+                        print(f'stopped {self.ident} thread: END')
                         return
             elif self.buffer.state == 2:
                 try:
@@ -74,9 +86,17 @@ class ClientHandler(threading.Thread):
                 except BadCheckSum:
                     self.connection.sendall(self.BAD_CHECKSUM.encode())
                 except FotoException:
+                    print('------------' * 5)
+                    print(vars(self.buffer))
+                    print('------------' * 5)
+                    print(f'stopped {self.ident} thread: END')
                     self.end_with_message(self.SYNTAX_ERROR)
                     return
                 except InfoOrFoto:
+                    print('------------' * 5)
+                    print(vars(self.buffer))
+                    print('------------' * 5)
+                    print(f'stopped {self.ident} thread: END')
                     self.end_with_message(self.SYNTAX_ERROR)
                     return
         print('------------' * 5)
