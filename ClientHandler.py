@@ -36,7 +36,7 @@ class ClientHandler(threading.Thread):
 
     def run(self,):
         while not self.stop_event.is_set():
-            if time.time() - self.start_time >= 45:
+            if time.time() - self.start_time >= 145:
                 self.end_with_message(self.TIMEOUT)
                 print(f'stopped {self.ident} thread: TIMEOUT')
                 return
@@ -53,12 +53,19 @@ class ClientHandler(threading.Thread):
             elif self.buffer.state == 1:
                 password = self.buffer.process_byte(data)
                 if password:
+                    try:
+                        int_from_password = int(password)
+                    except ValueError:
+                        self.end_with_message(self.LOGIN_FAILED)
+                        return
                     if self.username_wrong:
                         self.end_with_message(self.LOGIN_FAILED)
-                    if int(password) == self.username:
+                        return
+                    if int_from_password == self.username:
                         self.connection.sendall(self.SECOND_MESSAGE.encode())
                     else:
                         self.end_with_message(self.LOGIN_FAILED)
+                        return
             elif self.buffer.state == 2:
                 try:
                     reading_succ = self.buffer.process_byte(data)
@@ -66,7 +73,6 @@ class ClientHandler(threading.Thread):
                         self.connection.sendall(self.SECOND_MESSAGE.encode())
                 except BadCheckSum:
                     self.connection.sendall(self.BAD_CHECKSUM.encode())
-                    return
                 except FotoException:
                     self.end_with_message(self.SYNTAX_ERROR)
                     return
@@ -83,34 +89,7 @@ class ClientHandler(threading.Thread):
         if not self.stop_event.is_set():
             self.stop_event.set()
         super().join(**kwargs)
-        
 
-    # def create_response(self, words: list) -> [str, None]:
-    #     if self.step == 0:
-    #         self.step += 1
-    #         self.handle_first_step(words)
-    #         return self.FIRST_MESSAGE
-    #     elif self.step == 1:
-    #         self.step += 1
-    #         if self.handle_second_step(words):
-    #             return self.SECOND_MESSAGE
-    #         else:
-    #             self.bad_checksum.set()
-    #             return None
-    #     elif self.step == 2:
-    #         return self.handle_third_step(words)
-    #
-    # def handle_first_step(self, words: List):
-    #     self.username = words[0]
-    #     return True
-    #
-    # def handle_second_step(self, words: List):
-    #     password = reduce(lambda x, y: x+y, list(map(ord, [x for x in self.username])))
-    #     try:
-    #         entered_pass = int(words[0])
-    #     except Exception:
-    #         return False
-    #     return password == entered_pass
 
 
 
