@@ -36,12 +36,13 @@ class ClientHandler(threading.Thread):
 
     def run(self,):
         while not self.stop_event.is_set():
-            if time.time() - self.start_time >= 1111145:
+            if time.time() - self.start_time >= 45:
                 self.end_with_message(self.TIMEOUT)
                 print(f'stopped {self.ident} thread: TIMEOUT')
                 return
             data = self.connection.recv(1)
             if self.buffer.state == 0:
+                # TODO> fix case of ROBOT NOT in username
                 try:
                     username_sum = self.buffer.process_byte(data)
                     if username_sum:
@@ -50,10 +51,10 @@ class ClientHandler(threading.Thread):
                 except RobotNotInUsername:
                     self.username_wrong = True
             elif self.buffer.state == 1:
-                if self.username_wrong:
-                    self.end_with_message(self.LOGIN_FAILED)
                 password = self.buffer.process_byte(data)
                 if password:
+                    if self.username_wrong:
+                        self.end_with_message(self.LOGIN_FAILED)
                     if int(password) == self.username:
                         self.connection.sendall(self.SECOND_MESSAGE.encode())
                     else:

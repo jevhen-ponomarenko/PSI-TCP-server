@@ -43,6 +43,7 @@ class Buffer:
                 self.password += ord(byte)
                 if len(self.buffer) == 5:
                     if not self.buffer == bytearray(b'Robot'):
+                        self.counting_pass = True
                         raise RobotNotInUsername()
                     else:
                         self.counting_pass = True
@@ -60,6 +61,7 @@ class Buffer:
                 return ret
             else:
                 self.buffer.extend(byte)
+                self.last_byte =byte
                 return None
 
         elif self.state == 2:
