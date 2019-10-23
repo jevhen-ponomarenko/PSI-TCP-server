@@ -24,6 +24,7 @@ class Buffer:
         self.counting_pass = False
         self.counting_checksum = False
         self.data = bytearray()
+        # self.file = open(f"guru99.{self.__hash__()[0:5]}", "w+")
 
     def process_byte(self, byte: bytes) -> bool or int:
         # """
@@ -110,7 +111,7 @@ class Buffer:
             elif self.counting_checksum and self.photo:
                 self.data.extend(byte)  # just for testing
                 if self.last_byte and self.last_byte == b'\r' and byte == b'\n' and self.read_photo_bytes < int(self.photo_length_buffer):
-                    raise FotoException()
+                    raise BadCheckSum()
                 self.last_byte = byte
                 if self.read_photo_bytes < int(self.photo_length_buffer):  # reading photo data
                     self.checksum += ord(byte)
