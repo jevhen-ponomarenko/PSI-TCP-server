@@ -40,6 +40,10 @@ class Buffer:
                 return self.password
 
             if not self.counting_pass:
+                if byte == b'\n' and self.last_byte == b'\r':
+                    self.state = 1
+                    return self.password
+                self.last_byte = byte
                 self.buffer.extend(byte)
                 self.password += ord(byte)
                 if len(self.buffer) == 5:
