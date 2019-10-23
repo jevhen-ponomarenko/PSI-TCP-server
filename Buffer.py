@@ -15,6 +15,7 @@ class Buffer:
         self.photo_length_buffer = bytearray()
         self.state = 0  # only 0 and 1 is allowed
         self.photo = None
+        self.info = None
         self.checksum = 0
         self.sent_checksum = bytearray()
         self.read_photo_bytes = 0
@@ -79,12 +80,15 @@ class Buffer:
                     if self.buffer != bytearray(b'INFO ') and self.buffer != bytearray(b'FOTO '):
                         raise InfoOrFoto()
                     elif self.buffer == bytearray(b'FOTO '):
+                        self.info = False
                         self.photo = True
                         self.photo_length_buffer.extend(byte)  # one byte of length is loaded in memory now
                         self.buffer.extend(byte)  # too keep this bullshit working
                     elif self.buffer == bytearray(b'INFO '):
+                        self.info = True
                         self.photo = False
                         self.buffer.extend(byte)
+                        self.last_byte = byte
                 elif byte == b' ' and self.photo:
                     self.counting_checksum = True
                 elif byte != b' ' and self.photo:
