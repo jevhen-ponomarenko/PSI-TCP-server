@@ -50,7 +50,10 @@ class Buffer:
                         return None
             else:
                 self.last_byte = byte
-                self.password += ord(byte)
+                try:
+                    self.password += ord(byte)
+                except TypeError:
+                    pass
                 return None
 
         elif self.state == 1:
