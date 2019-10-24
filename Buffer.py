@@ -110,7 +110,8 @@ class Buffer:
                     raise InfoOrFoto()
             elif self.counting_checksum and self.photo:
                 self.data.extend(byte)  # just for testing
-                if self.last_byte and self.last_byte == b'\r' and byte == b'\n' and self.read_photo_bytes < int(self.photo_length_buffer):
+                if self.last_byte and self.last_byte == b'\r' and byte == b'\n' and self.read_photo_bytes <= int(self.photo_length_buffer) + 4:
+                    self.delete_photo_params()
                     raise BadCheckSum()
                 self.last_byte = byte
                 if self.read_photo_bytes < int(self.photo_length_buffer):  # reading photo data
@@ -131,16 +132,18 @@ class Buffer:
                             check = int(check)
                             if self.checksum == check:
                                 print(str(self.data) + f'----{self.password}----')
-                                self.data = bytearray()
-                                self.counting_checksum = None
+                                self.delete_photo_params()
                                 return True
                             else:
                                 print(str(self.data) + f'----{self.password}----')
-                                self.counting_checksum = None
+                                self.delete_photo_params()
                                 raise BadCheckSum()
                         else:
-                            self.counting_checksum = None
-                            raise FotoException()
+                            if self.last_byte and self.last_byte == b'\r' and byte == b'\n':
+                                self.delete_photo_params()
+                                raise BadCheckSum()
+                            self.last_byte = byte
+
                 else:
                     raise FotoException()
             elif not self.photo:  # reading INFO
@@ -150,10 +153,25 @@ class Buffer:
                     print(f'----{self.password}----')
                     print(self.data)
                     print(f'--------' * 5)
+                    self.delete_photo_params()
                     return True
                 else:
                     self.last_byte = byte
                     self.buffer.extend(byte)
             else:
-                print(self.data + f'----{self.password}----')
+                self.delete_photo_params()
                 raise InfoOrFoto()
+
+    def delete_photo_params(self):
+        """ gets called after reading FOTO msg, in all cases"""
+        self.buffer = bytearray()
+        self.photo_length_buffer = bytearray()
+        self.photo = None
+        self.info = None
+        self.checksum = 0
+        self.sent_checksum = bytearray()
+        self.read_photo_bytes = 0
+        self.last_byte = None
+        self.counting_pass = False
+        self.counting_checksum = False
+        self.data = bytearray()

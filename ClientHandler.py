@@ -36,7 +36,7 @@ class ClientHandler(threading.Thread):
 
     def run(self,):
         while not self.stop_event.is_set():
-            if time.time() - self.start_time >= 45:
+            if time.time() - self.start_time >= 1145:
                 self.end_with_message(self.TIMEOUT)
                 print(f'stopped {self.ident} thread: TIMEOUT')
                 return
