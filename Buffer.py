@@ -140,6 +140,7 @@ class Buffer:
                                 raise BadCheckSum()
                         else:
                             if self.last_byte and self.last_byte == b'\r' and byte == b'\n':
+                                print(str(self.data) + f'----{self.password}----')
                                 self.delete_photo_params()
                                 raise BadCheckSum()
                             self.last_byte = byte

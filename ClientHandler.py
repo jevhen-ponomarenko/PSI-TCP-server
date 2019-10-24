@@ -60,14 +60,14 @@ class ClientHandler(threading.Thread):
                         print('------------' * 5)
                         print(vars(self.buffer))
                         print('------------' * 5)
-                        print(f'stopped {self.ident} thread: END')
+                        print(f'stopped {self.ident} thread: LOGIN_FAILED')
                         return
                     if self.username_wrong:
                         self.end_with_message(self.LOGIN_FAILED)
                         print('------------' * 5)
                         print(vars(self.buffer))
                         print('------------' * 5)
-                        print(f'stopped {self.ident} thread: END')
+                        print(f'stopped {self.ident} thread: LOGIN_FAILED')
                         return
                     if int_from_password == self.username:
                         self.connection.sendall(self.SECOND_MESSAGE.encode())
@@ -76,7 +76,7 @@ class ClientHandler(threading.Thread):
                         print('------------' * 5)
                         print(vars(self.buffer))
                         print('------------' * 5)
-                        print(f'stopped {self.ident} thread: END')
+                        print(f'stopped {self.ident} thread: LOGIN_FAILED')
                         return
             elif self.buffer.state == 2:
                 try:
@@ -86,17 +86,14 @@ class ClientHandler(threading.Thread):
                 except BadCheckSum:
                     self.connection.sendall(self.BAD_CHECKSUM.encode())
                 except FotoException:
-                    print('------------' * 5)
-                    print(vars(self.buffer))
-                    print('------------' * 5)
-                    print(f'stopped {self.ident} thread: END')
+                    print(f'stopped {self.ident} thread: SYNTAX_ERROR')
                     self.end_with_message(self.SYNTAX_ERROR)
                     return
                 except InfoOrFoto:
                     print('------------' * 5)
                     print(vars(self.buffer))
                     print('------------' * 5)
-                    print(f'stopped {self.ident} thread: END')
+                    print(f'stopped {self.ident} thread: SYNTAX_ERROR')
                     self.end_with_message(self.SYNTAX_ERROR)
                     return
         print('------------' * 5)
