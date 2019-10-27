@@ -1,0 +1,6 @@
+Robot345\r\n
+674\r\n
+INFO x\r\n
+FOTO 1
+
+

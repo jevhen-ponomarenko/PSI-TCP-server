@@ -142,6 +142,8 @@ class ClientHandler(threading.Thread):
             checksum = 0
             while read_bytes < bytes_to_read:
                 byte = self.buffer.read_byte()
+                if byte == b'':
+                    raise FotoException()
                 f.write(byte)
                 checksum += ord(byte)
                 read_bytes += 1
@@ -150,6 +152,8 @@ class ClientHandler(threading.Thread):
         
         for i in range(4):
             byte = self.buffer.read_byte()
+            if byte == b'':
+                raise FotoException()
             sent_checksum.extend(byte)
 
         parsed_checksum = struct.unpack('>HH', sent_checksum)
@@ -157,7 +161,7 @@ class ClientHandler(threading.Thread):
         parsed_checksum = int(parsed_checksum)
         
         if parsed_checksum == checksum:
-            return True
+            self.send_message(self.SECOND_MESSAGE)
         else:
             raise BadCheckSum()
 
