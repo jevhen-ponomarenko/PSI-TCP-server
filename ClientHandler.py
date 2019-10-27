@@ -161,7 +161,7 @@ class ClientHandler(threading.Thread):
 
     def handle_info(self):
         msg = self.buffer.read_line()
-        print(msg.decode() + '-------' + str(self.ident) + '-------')
+        # print(msg.decode() + '-------' + str(self.ident) + '-------')
         self.send_message(self.SECOND_MESSAGE)
 
 
