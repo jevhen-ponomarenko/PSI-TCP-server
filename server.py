@@ -30,23 +30,13 @@ except socket.error as msg:
 s.listen(10)
 print("Listening...")
 
-connections = []
-
 while True:
     # blocking call, waits to accept a connection
     conn, addr = s.accept()
 
     print("[-] Connected to " + addr[0] + ":" + str(addr[1]))
-    conn.send(b"200 LOGIN\r\n")
+
     client = ClientHandler(conn)
     client.start()
-    # client.join(timeout=15)
-    connections.append((client, time.time()))
-
-    # for client, time_start in connections:
-    #     if time.time() - time_start >= 15:
-    #         client.end_with_message(client.TIMEOUT)
-    #         client.join()
-
 
 s.close()
