@@ -136,13 +136,15 @@ class ClientHandler(threading.Thread):
                 raise WrongPassword()
 
     def handle_photo(self):
-        bytes_to_read = self.buffer.read_photo_length()
-        read_bytes = 0
-        checksum = 0
-        while read_bytes < bytes_to_read:
-            byte = self.buffer.read_byte()
-            checksum += ord(byte)
-            read_bytes += 1
+        with open(f'photo{self.ident}', 'wb') as f:
+            bytes_to_read = self.buffer.read_photo_length()
+            read_bytes = 0
+            checksum = 0
+            while read_bytes < bytes_to_read:
+                byte = self.buffer.read_byte()
+                f.write(byte)
+                checksum += ord(byte)
+                read_bytes += 1
 
         sent_checksum = bytearray()
         
