@@ -71,7 +71,7 @@ class ClientHandler(threading.Thread):
             return
 
         while not self.stop_event.is_set():
-            if time.time() - self.start_time >= 45:
+            if time.time() - self.start_time >= (45 if settings.AWS else 1000000):
                 self.end_with_message(self.TIMEOUT)
                 break
             try:
@@ -146,35 +146,34 @@ class ClientHandler(threading.Thread):
             while read_bytes < bytes_to_read:
                 try:
                     byte = self.buffer.read_byte(MSG_DONTWAIT, fake=True)
-                    f.write(byte)
-                    checksum += ord(byte)
-                    read_bytes += 1
                 except BlockingIOError:
                     self.end_with_message(self.SYNTAX_ERROR)
-                if byte == b'':
-                    raise FotoException()
+
+                f.write(byte)
+                checksum += ord(byte)
+                read_bytes += 1
 
 
         sent_checksum = bytearray()
         
         for i in range(4):
             try:
-                byte = self.buffer.read_byte()
-                sent_checksum.extend(byte)
-                parsed_checksum = struct.unpack('>HH', sent_checksum)
-                parsed_checksum = str(parsed_checksum[0]) + str(parsed_checksum[1])
-                parsed_checksum = int(parsed_checksum)
-
-                if not settings.AWS:  # this thingy is in settings module, telnet sends \r\n at the end of every message
-                    for i in range(2):
-                        self.buffer.read_byte(fake=True)
-
-                if parsed_checksum == checksum:
-                    self.send_message(self.SECOND_MESSAGE)
-                else:
-                    raise BadCheckSum()
+                byte = self.buffer.read_byte(fake=True)
             except BlockingIOError:
                 raise BadCheckSum()
+            sent_checksum.extend(byte)
+        parsed_checksum = struct.unpack('>HH', sent_checksum)
+        parsed_checksum = str(parsed_checksum[0]) + str(parsed_checksum[1])
+        parsed_checksum = int(parsed_checksum)
+
+        if not settings.AWS:  # this thingy is in settings module, telnet sends \r\n at the end of every message
+            for i in range(2):
+                self.buffer.read_byte(fake=True)
+
+        if parsed_checksum == checksum:
+            self.send_message(self.SECOND_MESSAGE)
+        else:
+            raise BadCheckSum()
 
     def handle_info(self):
         msg = self.buffer.read_line()
