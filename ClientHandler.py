@@ -7,6 +7,8 @@ from typing import List
 
 from Buffer import Buffer, PhotoLengthNotNumber
 
+import settings 
+
 
 class RobotNotInUsername(Exception):
     pass
@@ -52,7 +54,11 @@ class ClientHandler(threading.Thread):
         self.stop_event = threading.Event()
         self.username_wrong = None
         self.start_time = time.time()
+        threading.Timer(15, self.after_timeout).start()
         super().__init__()
+        
+    def after_timeout(self,):
+        self.end_with_message(self.TIMEOUT)
 
     def end_with_message(self, message):
         self.connection.sendall(message.encode())
@@ -141,7 +147,7 @@ class ClientHandler(threading.Thread):
             read_bytes = 0
             checksum = 0
             while read_bytes < bytes_to_read:
-                byte = self.buffer.read_byte()
+                byte = self.buffer.read_byte(fake=True)
                 if byte == b'':
                     raise FotoException()
                 f.write(byte)
@@ -160,6 +166,10 @@ class ClientHandler(threading.Thread):
         parsed_checksum = str(parsed_checksum[0]) + str(parsed_checksum[1])
         parsed_checksum = int(parsed_checksum)
         
+        if not settings.AWS:   # this thingy is in settings module, telnet sends \r\n at the end of every message
+            for i in range(2):
+                self.buffer.read_byte(fake=True)
+                
         if parsed_checksum == checksum:
             self.send_message(self.SECOND_MESSAGE)
         else:

@@ -46,9 +46,10 @@ class Buffer:
         self.buffer = bytearray()
         return buff
 
-    def read_byte(self,):
+    def read_byte(self, fake=False):
         data = self.connection.recv(1)
-        self.buffer.extend(data)
+        if not fake:
+            self.buffer.extend(data)
         return data
 
     def read_photo_length(self,):

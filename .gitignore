@@ -1,4 +1,4 @@
 .idea
 venv-tcp/
 __pycache__
-photo^$
+photo*
