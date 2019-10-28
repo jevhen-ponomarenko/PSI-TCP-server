@@ -46,8 +46,8 @@ class Buffer:
         self.buffer = bytearray()
         return buff
 
-    def read_byte(self, fake=False):
-        data = self.connection.recv(1)
+    def read_byte(self, *args, fake=False):
+        data = self.connection.recv(1, *args)
         if not fake:
             self.buffer.extend(data)
         return data

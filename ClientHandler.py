@@ -1,6 +1,6 @@
 import struct
 import time
-from _socket import socket
+from _socket import socket, MSG_DONTWAIT
 import threading
 from functools import reduce
 from typing import List
@@ -54,11 +54,8 @@ class ClientHandler(threading.Thread):
         self.stop_event = threading.Event()
         self.username_wrong = None
         self.start_time = time.time()
-        threading.Timer(15, self.after_timeout).start()
         super().__init__()
-        
-    def after_timeout(self,):
-        self.end_with_message(self.TIMEOUT)
+    
 
     def end_with_message(self, message):
         self.connection.sendall(message.encode())
@@ -147,33 +144,37 @@ class ClientHandler(threading.Thread):
             read_bytes = 0
             checksum = 0
             while read_bytes < bytes_to_read:
-                byte = self.buffer.read_byte(fake=True)
+                try:
+                    byte = self.buffer.read_byte(MSG_DONTWAIT, fake=True)
+                    f.write(byte)
+                    checksum += ord(byte)
+                    read_bytes += 1
+                except BlockingIOError:
+                    self.end_with_message(self.SYNTAX_ERROR)
                 if byte == b'':
                     raise FotoException()
-                f.write(byte)
-                checksum += ord(byte)
-                read_bytes += 1
+
 
         sent_checksum = bytearray()
         
         for i in range(4):
-            byte = self.buffer.read_byte()
-            if byte == b'':
-                raise FotoException()
-            sent_checksum.extend(byte)
+            try:
+                byte = self.buffer.read_byte()
+                sent_checksum.extend(byte)
+                parsed_checksum = struct.unpack('>HH', sent_checksum)
+                parsed_checksum = str(parsed_checksum[0]) + str(parsed_checksum[1])
+                parsed_checksum = int(parsed_checksum)
 
-        parsed_checksum = struct.unpack('>HH', sent_checksum)
-        parsed_checksum = str(parsed_checksum[0]) + str(parsed_checksum[1])
-        parsed_checksum = int(parsed_checksum)
-        
-        if not settings.AWS:   # this thingy is in settings module, telnet sends \r\n at the end of every message
-            for i in range(2):
-                self.buffer.read_byte(fake=True)
-                
-        if parsed_checksum == checksum:
-            self.send_message(self.SECOND_MESSAGE)
-        else:
-            raise BadCheckSum()
+                if not settings.AWS:  # this thingy is in settings module, telnet sends \r\n at the end of every message
+                    for i in range(2):
+                        self.buffer.read_byte(fake=True)
+
+                if parsed_checksum == checksum:
+                    self.send_message(self.SECOND_MESSAGE)
+                else:
+                    raise BadCheckSum()
+            except BlockingIOError:
+                raise BadCheckSum()
 
     def handle_info(self):
         msg = self.buffer.read_line()
