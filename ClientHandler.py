@@ -96,9 +96,15 @@ class ClientHandler(threading.Thread):
 
     def handle_login(self):
         self.send_message(self.FIRT_MESSAGE)
-        username = self.buffer.read_line()
+        try:
+            username = self.buffer.read_line(MSG_DONTWAIT)
+        except BlockingIOError:
+            pass
         self.send_message(self.PASSWORD_MESSAGE)
-        password = self.buffer.read_line()
+        try:
+            password = self.buffer.read_line(MSG_DONTWAIT)
+        except BlockingIOError:
+            self.end_with_message(self.LOGIN_FAILED)
         try:
             if self.validate_password(password, username):
                 self.send_message(self.SECOND_MESSAGE)
@@ -177,7 +183,7 @@ class ClientHandler(threading.Thread):
 
     def handle_info(self):
         msg = self.buffer.read_line()
-        # print(msg.decode() + '-------' + str(self.ident) + '-------')
+        print(msg + '-------' + str(self.ident) + '-------')
         self.send_message(self.SECOND_MESSAGE)
 
 

@@ -17,16 +17,16 @@ class Buffer:
     def __len__(self,):
         return len(self.buffer)
 
-    def read_line(self,):
+    def read_line(self, *args):
         self.buffer = bytearray()
         last_byte, curr_byte = b'', b''
 
         while curr_byte != b'\n' or last_byte != b'\r':
             try:
                 last_byte = curr_byte
-                curr_byte = self.connection.recv(1)
+                curr_byte = self.connection.recv(1, *args)
                 self.buffer.extend(curr_byte)
-            except Exception as e:
+            except BlockingIOError as e:
                 raise e
         # skip the esc sequence
         buff = self.buffer[:-2]

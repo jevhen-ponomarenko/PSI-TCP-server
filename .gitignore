@@ -2,3 +2,4 @@
 venv-tcp/
 __pycache__
 photo*
+settings/local.py
