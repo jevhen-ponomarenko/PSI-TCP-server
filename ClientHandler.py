@@ -97,8 +97,10 @@ class ClientHandler(threading.Thread):
     def handle_login(self):
         self.send_message(self.FIRT_MESSAGE)
         username = self.buffer.read_line()
+        print(username + b'+++++' + str(self.ident).encode())
         self.send_message(self.PASSWORD_MESSAGE)
         password = self.buffer.read_line()
+        print(password + b'!!!!!!' + str(self.ident).encode())
         try:
             if self.validate_password(password, username):
                 self.send_message(self.SECOND_MESSAGE)
@@ -177,7 +179,7 @@ class ClientHandler(threading.Thread):
 
     def handle_info(self):
         msg = self.buffer.read_line()
-        print(msg + '-------' + str(self.ident) + '-------')
+        print(msg + b'-------' + str(self.ident).encode() + b'-------')
         self.send_message(self.SECOND_MESSAGE)
 
 
