@@ -96,15 +96,9 @@ class ClientHandler(threading.Thread):
 
     def handle_login(self):
         self.send_message(self.FIRT_MESSAGE)
-        try:
-            username = self.buffer.read_line(MSG_DONTWAIT)
-        except BlockingIOError:
-            pass
+        username = self.buffer.read_line()
         self.send_message(self.PASSWORD_MESSAGE)
-        try:
-            password = self.buffer.read_line(MSG_DONTWAIT)
-        except BlockingIOError:
-            self.end_with_message(self.LOGIN_FAILED)
+        password = self.buffer.read_line()
         try:
             if self.validate_password(password, username):
                 self.send_message(self.SECOND_MESSAGE)
