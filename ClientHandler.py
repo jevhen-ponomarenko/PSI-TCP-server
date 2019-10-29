@@ -95,20 +95,23 @@ class ClientHandler(threading.Thread):
         super().join(**kwargs)
 
     def handle_login(self):
-        self.send_message(self.FIRT_MESSAGE)
-        username = self.buffer.read_line()
-        print(username + b'+++++' + str(self.ident).encode())
-        self.send_message(self.PASSWORD_MESSAGE)
-        password = self.buffer.read_line()
-        print(password + b'!!!!!!' + str(self.ident).encode())
-        try:
-            if self.validate_password(password, username):
-                self.send_message(self.SECOND_MESSAGE)
-                return True
-            else:
+        with open(f'out{self.ident}', 'wb') as f:
+            self.send_message(self.FIRT_MESSAGE)
+            username = self.buffer.read_line()
+            f.write(username)
+            print(username + b'+++++' + str(self.ident).encode())
+            self.send_message(self.PASSWORD_MESSAGE)
+            password = self.buffer.read_line()
+            f.write(password)
+            print(password + b'!!!!!!' + str(self.ident).encode())
+            try:
+                if self.validate_password(password, username):
+                    self.send_message(self.SECOND_MESSAGE)
+                    return True
+                else:
+                    return False
+            except WrongPassword:
                 return False
-        except WrongPassword:
-            return False
 
     def handle_command(self):
         while True:
@@ -141,7 +144,7 @@ class ClientHandler(threading.Thread):
                 raise WrongPassword()
 
     def handle_photo(self):
-        with open(f'photo{self.ident}', 'wb') as f:
+        with open(f'out{self.ident}', 'wb') as f:
             bytes_to_read = self.buffer.read_photo_length()
             read_bytes = 0
             checksum = 0
@@ -178,9 +181,10 @@ class ClientHandler(threading.Thread):
             raise BadCheckSum()
 
     def handle_info(self):
-        msg = self.buffer.read_line()
-        print(msg + b'-------' + str(self.ident).encode() + b'-------')
-        self.send_message(self.SECOND_MESSAGE)
+        with open(f'out{self.ident}', 'wb') as f:
+            msg = self.buffer.read_line()
+            f.write(msg)
+            self.send_message(self.SECOND_MESSAGE)
 
 
 
