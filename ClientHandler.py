@@ -56,7 +56,6 @@ class ClientHandler(threading.Thread):
         self.start_time = time.time()
         super().__init__()
     
-
     def end_with_message(self, message):
         self.connection.sendall(message.encode())
         self.connection.close()
@@ -119,7 +118,10 @@ class ClientHandler(threading.Thread):
             if not self.buffer.possible_start_info() and not self.buffer.possible_start_photo():
                 raise WrongSyntax()
             elif self.buffer == b'INFO ':
-                self.handle_info()
+                try:
+                    self.handle_info()
+                except BlockingIOError:
+                    self.end_with_message(self.SYNTAX_ERROR)
                 break
             elif self.buffer == b'FOTO ':
                 self.handle_photo()
@@ -157,7 +159,6 @@ class ClientHandler(threading.Thread):
                 f.write(byte)
                 checksum += ord(byte)
                 read_bytes += 1
-
 
         sent_checksum = bytearray()
         

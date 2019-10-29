@@ -53,7 +53,6 @@ class Buffer:
         except ValueError:
             raise PhotoLengthNotNumber()
 
-
     def possible_start_info(self):
         info = b'INFO '
         length = min(len(self.buffer), 5)
