@@ -54,7 +54,8 @@ class ClientHandler(threading.Thread):
         self.stop_event = threading.Event()
         self.username_wrong = None
         self.start_time = time.time()
-        threading.Timer(45, self.after_done)
+        t = threading.Timer(10, self.after_done)
+        t.start()
         super().__init__()
 
     def after_done(self):
