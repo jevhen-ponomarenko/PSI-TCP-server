@@ -54,8 +54,12 @@ class ClientHandler(threading.Thread):
         self.stop_event = threading.Event()
         self.username_wrong = None
         self.start_time = time.time()
+        threading.Timer(45, self.after_done)
         super().__init__()
-    
+
+    def after_done(self):
+        self.end_with_message(self.TIMEOUT)
+
     def end_with_message(self, message):
         self.connection.sendall(message.encode())
         self.connection.close()
