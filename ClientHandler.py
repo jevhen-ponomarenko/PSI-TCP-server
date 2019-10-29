@@ -187,17 +187,10 @@ class ClientHandler(threading.Thread):
             raise BadCheckSum()
 
     def handle_info(self):
-        valid = True
         with open(f'out{self.ident}', 'wb') as f:
-            while True:
-                try:
-                    byte = self.buffer.read_byte(MSG_DONTWAIT, fake=True)
-                except BlockingIOError:
-                    valid = False
-                    self.end_with_message(self.SYNTAX_ERROR)
-                f.write(byte)
-            if valid:
-                self.send_message(self.SECOND_MESSAGE)
+            msg = self.buffer.read_line()
+            f.write(msg)
+            self.send_message(self.SECOND_MESSAGE)
 
 
 
