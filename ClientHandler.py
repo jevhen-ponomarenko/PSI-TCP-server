@@ -177,9 +177,9 @@ class ClientHandler(threading.Thread):
         parsed_checksum = str(parsed_checksum[0]) + str(parsed_checksum[1])
         parsed_checksum = int(parsed_checksum)
 
-        if not settings.AWS:  # this thingy is in settings module, telnet sends \r\n at the end of every message
-            for i in range(2):
-                self.buffer.read_byte(fake=True)
+        # if not settings.AWS:  # this thingy is in settings module, telnet sends \r\n at the end of every message
+        #     for i in range(2):
+        #         self.buffer.read_byte(fake=True)
 
         if parsed_checksum == checksum:
             self.send_message(self.SECOND_MESSAGE)

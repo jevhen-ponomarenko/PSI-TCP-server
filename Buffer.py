@@ -22,6 +22,8 @@ class Buffer:
         last_byte, curr_byte = b'', b''
 
         while curr_byte != b'\n' or last_byte != b'\r':
+            if curr_byte == '':
+                raise PhotoLengthNotNumber()
             try:
                 last_byte = curr_byte
                 curr_byte = self.connection.recv(1, *args)
