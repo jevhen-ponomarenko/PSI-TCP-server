@@ -1,13 +1,10 @@
 import struct
+import threading
 import time
 from _socket import socket, MSG_DONTWAIT
-import threading
-from functools import reduce
-from typing import List
 
+import settings
 from Buffer import Buffer, PhotoLengthNotNumber
-
-import settings 
 
 
 class RobotNotInUsername(Exception):
@@ -119,7 +116,9 @@ class ClientHandler(threading.Thread):
 
     def handle_command(self):
         while True:
-            self.buffer.read_byte()
+            curr_byte = self.buffer.read_byte()
+            if curr_byte == '':
+                raise WrongSyntax()
             if not self.buffer.possible_start_info() and not self.buffer.possible_start_photo():
                 raise WrongSyntax()
             elif self.buffer == b'INFO ':
