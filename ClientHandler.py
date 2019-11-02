@@ -56,9 +56,12 @@ class ClientHandler(threading.Thread):
         super().__init__()
 
     def after_done(self):
+        if self.stop_event.is_set():
+            return
         self.end_with_message(self.TIMEOUT)
 
     def end_with_message(self, message):
+        self.stop_event.set()
         self.connection.sendall(message.encode())
         self.connection.close()
         self.stop_event.set()
@@ -96,23 +99,20 @@ class ClientHandler(threading.Thread):
         super().join(**kwargs)
 
     def handle_login(self):
-        with open(f'out{self.ident}', 'wb') as f:
-            self.send_message(self.FIRT_MESSAGE)
-            username = self.buffer.read_line()
-            f.write(username)
-            print(username + b'+++++' + str(self.ident).encode())
-            self.send_message(self.PASSWORD_MESSAGE)
-            password = self.buffer.read_line()
-            f.write(password)
-            print(password + b'!!!!!!' + str(self.ident).encode())
-            try:
-                if self.validate_password(password, username):
-                    self.send_message(self.SECOND_MESSAGE)
-                    return True
-                else:
-                    return False
-            except WrongPassword:
+        self.send_message(self.FIRT_MESSAGE)
+        username = self.buffer.read_username()
+        print(str(username) + '+++++' + str(self.ident))
+        self.send_message(self.PASSWORD_MESSAGE)
+        password = self.buffer.read_password(aprox_length=len(str(username)))
+        print(str(password) + '!!!!!!' + str(self.ident))
+        try:
+            if password == username:
+                self.send_message(self.SECOND_MESSAGE)
+                return True
+            else:
                 return False
+        except WrongPassword:
+            return False
 
     def handle_command(self):
         while True:
@@ -186,10 +186,10 @@ class ClientHandler(threading.Thread):
             raise BadCheckSum()
 
     def handle_info(self):
-        with open(f'out{self.ident}', 'wb') as f:
-            msg = self.buffer.read_line()
-            f.write(msg)
+        try:
+            self.buffer.read_line(fake=True)
             self.send_message(self.SECOND_MESSAGE)
-
+        except PhotoLengthNotNumber:
+            self.end_with_message(self.SYNTAX_ERROR)
 
 

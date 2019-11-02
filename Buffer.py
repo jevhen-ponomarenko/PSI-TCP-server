@@ -16,23 +16,66 @@ class Buffer:
     def __len__(self,):
         return len(self.buffer)
 
-    def read_line(self, *args):
-        self.buffer = bytearray()
+    def read_password(self,*args, aprox_length):
         last_byte, curr_byte = b'', b''
+        password = bytearray()
+        read_bytes = 0
+
+        while curr_byte != b'\n' or last_byte != b'\r':
+            try:
+                last_byte = curr_byte
+                curr_byte = self.connection.recv(1, *args)
+                read_bytes += 1
+                if curr_byte == '':
+                    return
+
+                if read_bytes <= aprox_length:
+                    password.extend(curr_byte)
+                else:
+                    pass
+            except BlockingIOError as e:
+                raise e
+        try:
+            return int(password)
+        except ValueError:
+            return
+
+    def read_username(self, *args):
+        last_byte,curr_byte = b'', b''
+        username_processed = 0
 
         while curr_byte != b'\n' or last_byte != b'\r':
             try:
                 last_byte = curr_byte
                 curr_byte = self.connection.recv(1, *args)
                 if curr_byte == '':
-                    raise PhotoLengthNotNumber()
-                self.buffer.extend(curr_byte)
+                    return
+                username_processed += ord(curr_byte)
             except BlockingIOError as e:
                 raise e
-        # skip the esc sequence
-        buff = self.buffer[:-2]
+            except ValueError:
+                return
+
+        return username_processed - ord(b'\r') - ord(b'\n')
+
+    def read_line(self, *args, fake=False):
         self.buffer = bytearray()
-        return buff
+        last_byte, curr_byte = b'', b''
+
+        while curr_byte != b'\n' or last_byte != b'\r':
+            try:
+                last_byte = curr_byte
+                if fake:
+                    curr_byte = self.read_byte(fake=True)
+                else:
+                    curr_byte = self.connection.recv(1, *args)
+                    self.buffer.extend(curr_byte)
+                if curr_byte == '':
+                    raise PhotoLengthNotNumber()
+
+            except BlockingIOError as e:
+                raise e
+        return True
 
     def read_byte(self, *args, fake=False):
         data = self.connection.recv(1, *args)
