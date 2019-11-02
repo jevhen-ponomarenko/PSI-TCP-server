@@ -58,7 +58,7 @@ class ClientHandler(threading.Thread):
     def after_done(self):
         if self.stop_event.is_set():
             return
-        self.end_with_message(self.TIMEOUT)
+        self.end_with_message(self.SYNTAX_ERROR)
 
     def end_with_message(self, message):
         self.stop_event.set()
