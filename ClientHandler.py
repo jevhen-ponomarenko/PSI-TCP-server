@@ -106,7 +106,7 @@ class ClientHandler(threading.Thread):
         password = self.buffer.read_password(aprox_length=len(str(username)))
         print(str(password) + '!!!!!!' + str(self.ident))
         try:
-            if password == username:
+            if password == username and username > 518: #Robot not in username
                 self.send_message(self.SECOND_MESSAGE)
                 return True
             else:

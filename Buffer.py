@@ -53,8 +53,6 @@ class Buffer:
                 username_processed += ord(curr_byte)
             except BlockingIOError as e:
                 raise e
-            except ValueError:
-                return
 
         return username_processed - ord(b'\r') - ord(b'\n')
 
