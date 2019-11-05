@@ -135,6 +135,7 @@ class ClientHandler(threading.Thread):
         except OSError:
             print('OS Error')
             print(self.buffer.buffer)
+            print(self.ident)
 
     def validate_password(self, password: bytearray, username: bytearray) -> bool:
         computed_password = 0
