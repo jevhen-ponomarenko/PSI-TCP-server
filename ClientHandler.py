@@ -61,7 +61,6 @@ class ClientHandler(threading.Thread):
         self.end_with_message(self.SYNTAX_ERROR)
 
     def end_with_message(self, message):
-        self.stop_event.set()
         self.connection.sendall(message.encode())
         self.connection.close()
         self.stop_event.set()
@@ -130,7 +129,7 @@ class ClientHandler(threading.Thread):
             elif self.buffer == b'FOTO ':
                 self.handle_photo()
                 break
-            elif len(self.buffer) > 5:
+            else:
                 raise WrongSyntax()
 
     def validate_password(self, password: bytearray, username: bytearray) -> bool:
@@ -163,6 +162,7 @@ class ClientHandler(threading.Thread):
                     read_bytes += 1
             except BlockingIOError:
                 self.end_with_message(self.SYNTAX_ERROR)
+                return
 
         sent_checksum = bytearray()
         

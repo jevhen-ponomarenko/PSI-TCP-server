@@ -4,3 +4,4 @@ __pycache__
 photo*
 out*
 settings/local.py
+client.py
