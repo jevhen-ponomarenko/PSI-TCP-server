@@ -161,6 +161,8 @@ class ClientHandler(threading.Thread):
                 self.end_with_message(self.SYNTAX_ERROR)
             read_bytes = 0
             checksum = 0
+            if bytes_to_read < 0:
+                self.end_with_message(self.SYNTAX_ERROR)
             while read_bytes < bytes_to_read:
                 try:
                     byte = self.buffer.read_byte(MSG_DONTWAIT, fake=True)
