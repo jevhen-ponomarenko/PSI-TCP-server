@@ -81,11 +81,11 @@ class Buffer:
             self.buffer.extend(data)
         return data
 
-    def read_photo_length(self,):
+    def read_photo_length(self, *args):
         self.buffer = bytearray()
         byte = b''
         while byte != b' ':
-            byte = self.read_byte()
+            byte = self.read_byte(*args)
 
         buff = self.buffer[:-1]  # remove extra space at the end
         self.buffer = bytearray()

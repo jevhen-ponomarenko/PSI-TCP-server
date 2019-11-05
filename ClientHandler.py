@@ -151,7 +151,10 @@ class ClientHandler(threading.Thread):
 
     def handle_photo(self):
         with open(f'out{self.ident}', 'wb') as f:
-            bytes_to_read = self.buffer.read_photo_length()
+            try:
+                bytes_to_read = self.buffer.read_photo_length(MSG_DONTWAIT)
+            except BlockingIOError:
+                self.end_with_message(self.SYNTAX_ERROR)
             read_bytes = 0
             checksum = 0
             while read_bytes < bytes_to_read:
