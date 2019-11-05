@@ -161,6 +161,8 @@ class ClientHandler(threading.Thread):
                 bytes_to_read = self.buffer.read_photo_length()
             except BlockingIOError:
                 raise PhotoLengthNotNumber()
+            if bytes_to_read <= 0 or bytes_to_read == '' or bytes_to_read == ' ':
+                raise PhotoLengthNotNumber()
             read_bytes = 0
             checksum = 0
             while read_bytes < bytes_to_read:
