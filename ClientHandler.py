@@ -167,8 +167,7 @@ class ClientHandler(threading.Thread):
                 try:
                     byte = self.buffer.read_byte(MSG_DONTWAIT, fake=True)
                 except BlockingIOError:
-                    self.end_with_message(self.SYNTAX_ERROR)
-                    return
+                    raise PhotoLengthNotNumber()
 
                 f.write(byte)
                 checksum += ord(byte)
