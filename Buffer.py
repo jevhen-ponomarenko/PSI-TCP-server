@@ -94,6 +94,8 @@ class Buffer:
         self.buffer = bytearray()
         try:
             num = int(buff)
+            if num <= 0:
+                raise PhotoLengthNotNumber()
             return num
         except ValueError:
             raise PhotoLengthNotNumber()

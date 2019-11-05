@@ -132,8 +132,8 @@ class ClientHandler(threading.Thread):
                     break
                 elif len(self.buffer) > 5:
                     raise WrongSyntax()
-        except OSError:
-            print('OS Error')
+        except OSError as e:
+            print(repr(e))
             print(self.buffer.buffer)
             print(self.ident)
 
