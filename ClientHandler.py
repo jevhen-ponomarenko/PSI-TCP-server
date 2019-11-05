@@ -117,11 +117,7 @@ class ClientHandler(threading.Thread):
     def handle_command(self):
         try:
             while True:
-                curr_byte = b''
-                try:
-                    curr_byte = self.buffer.read_byte(MSG_DONTWAIT)
-                except BlockingIOError:
-                    raise WrongSyntax()
+                curr_byte = self.buffer.read_byte()
                 if curr_byte == '':
                     raise WrongSyntax()
                 if not self.buffer.possible_start_info() and not self.buffer.possible_start_photo():
