@@ -85,17 +85,12 @@ class Buffer:
         self.buffer = bytearray()
         byte = b''
         while byte != b' ':
-            try:
-                byte = self.read_byte(socket.MSG_DONTWAIT)
-            except BlockingIOError as e:
-                raise e
+            byte = self.read_byte()
 
         buff = self.buffer[:-1]  # remove extra space at the end
         self.buffer = bytearray()
         try:
             num = int(buff)
-            if num <= 0:
-                raise PhotoLengthNotNumber()
             return num
         except ValueError:
             raise PhotoLengthNotNumber()
