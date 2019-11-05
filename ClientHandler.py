@@ -129,7 +129,7 @@ class ClientHandler(threading.Thread):
             elif self.buffer == b'FOTO ':
                 self.handle_photo()
                 break
-            else:
+            elif len(self.buffer) > 5:
                 raise WrongSyntax()
 
     def validate_password(self, password: bytearray, username: bytearray) -> bool:
@@ -150,18 +150,18 @@ class ClientHandler(threading.Thread):
 
     def handle_photo(self):
         with open(f'out{self.ident}', 'wb') as f:
-            try:
-                bytes_to_read = self.buffer.read_photo_length(MSG_DONTWAIT)
-
-                read_bytes = 0
-                checksum = 0
-                while read_bytes < bytes_to_read:
+            bytes_to_read = self.buffer.read_photo_length()
+            read_bytes = 0
+            checksum = 0
+            while read_bytes < bytes_to_read:
+                try:
                     byte = self.buffer.read_byte(MSG_DONTWAIT, fake=True)
-                    f.write(byte)
-                    checksum += ord(byte)
-                    read_bytes += 1
-            except BlockingIOError:
-                self.end_with_message(self.SYNTAX_ERROR)
+                except BlockingIOError:
+                    self.end_with_message(self.SYNTAX_ERROR)
+
+                f.write(byte)
+                checksum += ord(byte)
+                read_bytes += 1
 
         sent_checksum = bytearray()
         
