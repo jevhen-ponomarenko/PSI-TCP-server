@@ -1,6 +1,7 @@
 import struct
 import threading
 import time
+import traceback
 from _socket import socket, MSG_DONTWAIT
 
 import settings
@@ -133,7 +134,7 @@ class ClientHandler(threading.Thread):
                 elif len(self.buffer) > 5:
                     raise WrongSyntax()
         except OSError as e:
-            print(repr(e))
+            traceback.print_exc()
             print(self.buffer.buffer)
             print(self.ident)
 
