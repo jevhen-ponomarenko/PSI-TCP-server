@@ -160,7 +160,7 @@ class ClientHandler(threading.Thread):
             try:
                 bytes_to_read = self.buffer.read_photo_length()
             except BlockingIOError:
-                self.end_with_message(self.SYNTAX_ERROR)
+                raise PhotoLengthNotNumber()
             read_bytes = 0
             checksum = 0
             while read_bytes < bytes_to_read:
@@ -168,6 +168,7 @@ class ClientHandler(threading.Thread):
                     byte = self.buffer.read_byte(MSG_DONTWAIT, fake=True)
                 except BlockingIOError:
                     self.end_with_message(self.SYNTAX_ERROR)
+                    return
 
                 f.write(byte)
                 checksum += ord(byte)
