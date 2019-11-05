@@ -158,12 +158,11 @@ class ClientHandler(threading.Thread):
             try:
                 bytes_to_read = self.buffer.read_photo_length()
             except BlockingIOError:
-                self.end_with_message(self.SYNTAX_ERROR)
+                raise WrongSyntax()
             read_bytes = 0
             checksum = 0
             if bytes_to_read < 0:
-                self.end_with_message(self.SYNTAX_ERROR)
-                return
+                raise WrongSyntax()
             while read_bytes < bytes_to_read:
                 try:
                     byte = self.buffer.read_byte(MSG_DONTWAIT, fake=True)
