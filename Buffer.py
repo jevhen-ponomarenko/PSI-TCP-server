@@ -85,7 +85,10 @@ class Buffer:
         self.buffer = bytearray()
         byte = b''
         while byte != b' ':
-            byte = self.read_byte()
+            try:
+                byte = self.read_byte(socket.MSG_DONTWAIT)
+            except BlockingIOError as e:
+                raise e
 
         buff = self.buffer[:-1]  # remove extra space at the end
         self.buffer = bytearray()

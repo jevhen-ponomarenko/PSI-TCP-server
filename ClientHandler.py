@@ -114,23 +114,27 @@ class ClientHandler(threading.Thread):
             return False
 
     def handle_command(self):
-        while True:
-            curr_byte = self.buffer.read_byte()
-            if curr_byte == '':
-                raise WrongSyntax()
-            if not self.buffer.possible_start_info() and not self.buffer.possible_start_photo():
-                raise WrongSyntax()
-            elif self.buffer == b'INFO ':
-                try:
-                    self.handle_info()
-                except BlockingIOError:
-                    self.end_with_message(self.SYNTAX_ERROR)
-                break
-            elif self.buffer == b'FOTO ':
-                self.handle_photo()
-                break
-            elif len(self.buffer) > 5:
-                raise WrongSyntax()
+        try:
+            while True:
+                curr_byte = self.buffer.read_byte()
+                if curr_byte == '':
+                    raise WrongSyntax()
+                if not self.buffer.possible_start_info() and not self.buffer.possible_start_photo():
+                    raise WrongSyntax()
+                elif self.buffer == b'INFO ':
+                    try:
+                        self.handle_info()
+                    except BlockingIOError:
+                        self.end_with_message(self.SYNTAX_ERROR)
+                    break
+                elif self.buffer == b'FOTO ':
+                    self.handle_photo()
+                    break
+                elif len(self.buffer) > 5:
+                    raise WrongSyntax()
+        except OSError:
+            print('OS Error')
+            print(self.buffer.buffer)
 
     def validate_password(self, password: bytearray, username: bytearray) -> bool:
         computed_password = 0
@@ -150,7 +154,11 @@ class ClientHandler(threading.Thread):
 
     def handle_photo(self):
         with open(f'out{self.ident}', 'wb') as f:
-            bytes_to_read = self.buffer.read_photo_length()
+            bytes_to_read = - 10
+            try:
+                bytes_to_read = self.buffer.read_photo_length()
+            except BlockingIOError:
+                self.end_with_message(self.SYNTAX_ERROR)
             read_bytes = 0
             checksum = 0
             while read_bytes < bytes_to_read:
