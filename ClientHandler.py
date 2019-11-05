@@ -152,17 +152,19 @@ class ClientHandler(threading.Thread):
         with open(f'out{self.ident}', 'wb') as f:
             try:
                 bytes_to_read = self.buffer.read_photo_length(MSG_DONTWAIT)
-
-                read_bytes = 0
-                checksum = 0
-                while read_bytes < bytes_to_read:
-                    byte = self.buffer.read_byte(MSG_DONTWAIT, fake=True)
-                    f.write(byte)
-                    checksum += ord(byte)
-                    read_bytes += 1
             except BlockingIOError:
                 self.end_with_message(self.SYNTAX_ERROR)
-                return
+            read_bytes = 0
+            checksum = 0
+            while read_bytes < bytes_to_read:
+                try:
+                    byte = self.buffer.read_byte(MSG_DONTWAIT, fake=True)
+                except BlockingIOError:
+                    self.end_with_message(self.SYNTAX_ERROR)
+
+                f.write(byte)
+                checksum += ord(byte)
+                read_bytes += 1
 
         sent_checksum = bytearray()
         
@@ -172,7 +174,6 @@ class ClientHandler(threading.Thread):
             except BlockingIOError:
                 raise BadCheckSum()
             sent_checksum.extend(byte)
-
         parsed_checksum = struct.unpack('>HH', sent_checksum)
         parsed_checksum = str(parsed_checksum[0]) + str(parsed_checksum[1])
         parsed_checksum = int(parsed_checksum)
