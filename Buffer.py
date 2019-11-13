@@ -60,7 +60,7 @@ class Buffer:
         self.buffer = bytearray()
         last_byte, curr_byte = b'', b''
 
-        while curr_byte != b'\n' or last_byte != b'\r':
+        while curr_byte != b'\n' and last_byte != b'\r':
             try:
                 last_byte = curr_byte
                 if fake:
