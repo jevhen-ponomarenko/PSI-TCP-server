@@ -21,7 +21,7 @@ class Buffer:
         password = bytearray()
         read_bytes = 0
 
-        while curr_byte != b'\n' or last_byte != b'\r':
+        while curr_byte != b'\n' and last_byte != b'\r':
             try:
                 last_byte = curr_byte
                 curr_byte = self.connection.recv(1, *args)
