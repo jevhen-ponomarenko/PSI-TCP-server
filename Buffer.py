@@ -21,7 +21,7 @@ class Buffer:
         password = bytearray()
         read_bytes = 0
 
-        while curr_byte != b'\n' and last_byte != b'\r':
+        while curr_byte != b'\n' or last_byte != b'\r':
             try:
                 last_byte = curr_byte
                 curr_byte = self.connection.recv(1, *args)
@@ -60,7 +60,7 @@ class Buffer:
         self.buffer = bytearray()
         last_byte, curr_byte = b'', b''
 
-        while curr_byte != b'\n' and last_byte != b'\r':
+        while curr_byte != b'\n' or last_byte != b'\r':
             try:
                 last_byte = curr_byte
                 if fake:
@@ -68,6 +68,8 @@ class Buffer:
                 else:
                     curr_byte = self.connection.recv(1, *args)
                     self.buffer.extend(curr_byte)
+                if curr_byte == '':
+                    raise PhotoLengthNotNumber()
 
             except BlockingIOError as e:
                 raise e
