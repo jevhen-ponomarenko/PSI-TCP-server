@@ -68,8 +68,6 @@ class Buffer:
                 else:
                     curr_byte = self.connection.recv(1, *args)
                     self.buffer.extend(curr_byte)
-                if curr_byte == '':
-                    raise PhotoLengthNotNumber()
 
             except BlockingIOError as e:
                 raise e
