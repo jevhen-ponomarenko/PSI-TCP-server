@@ -195,7 +195,7 @@ class ClientHandler(threading.Thread):
         try:
             self.buffer.read_line()
             print((f'[INFO] -- {self.ident}', self.buffer.buffer))
-            self.buffer.buffer = bytearray
+            self.buffer.buffer = bytearray()
             self.send_message(self.SECOND_MESSAGE)
         except PhotoLengthNotNumber:
             self.end_with_message(self.SYNTAX_ERROR)
