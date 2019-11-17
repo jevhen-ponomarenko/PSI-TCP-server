@@ -149,22 +149,6 @@ class ClientHandler(threading.Thread):
             elif len(self.buffer) > 5:
                 raise WrongSyntax()
 
-    def validate_password(self, password: bytearray, username: bytearray) -> bool:
-        computed_password = 0
-        for byte in username:
-            computed_password += byte
-
-        if len(username) < 5:
-            return False
-        elif len(username) > 5 and username[:5] != b'Robot':
-            return False
-        else:
-            try:
-                password = int(password)
-                return computed_password == password
-            except ValueError:
-                raise WrongPassword()
-
     def handle_photo(self):
         with open(f'out{self.ident}', 'wb') as f:
             bytes_to_read = self.buffer.read_photo_length()
@@ -205,6 +189,8 @@ class ClientHandler(threading.Thread):
         try:
             self.buffer.read_line()
             print((f'[INFO] -- {self.ident}', self.buffer.buffer))
+            with open(f'out{self.ident}', 'wt') as f:
+                f.write(self.buffer.buffer)
             self.buffer.buffer = bytearray()
             self.send_message(self.SECOND_MESSAGE)
         except PhotoLengthNotNumber:
