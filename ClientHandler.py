@@ -64,7 +64,6 @@ class ClientHandler(threading.Thread):
     def end_with_message(self, message):
         self.stop_event.set()
         self.connection.sendall(message.encode())
-        time.sleep(0.5)
         self.connection.close()
         self.stop_event.set()
 
@@ -78,19 +77,24 @@ class ClientHandler(threading.Thread):
 
         while not self.stop_event.is_set():
             if time.time() - self.start_time >= (45 if settings.AWS else 1000000):
+                time.sleep(0.5)
                 self.end_with_message(self.TIMEOUT)
                 break
             try:
+                time.sleep(0.5)
                 self.handle_command()
             except FotoException:
+                time.sleep(0.5)
                 self.end_with_message(self.SYNTAX_ERROR)
                 break
             except PhotoLengthNotNumber:
+                time.sleep(0.5)
                 self.end_with_message(self.SYNTAX_ERROR)
                 break
             except BadCheckSum:
                 self.send_message(self.BAD_CHECKSUM)
             except WrongSyntax:
+                time.sleep(0.5)
                 self.end_with_message(self.SYNTAX_ERROR)
                 break
         return
@@ -189,7 +193,7 @@ class ClientHandler(threading.Thread):
 
     def handle_info(self):
         try:
-            print((f'[INFO] -- {self.ident}', self.buffer.read_line()))
+            self.buffer.read_line(fake=True)
             self.send_message(self.SECOND_MESSAGE)
         except PhotoLengthNotNumber:
             self.end_with_message(self.SYNTAX_ERROR)
