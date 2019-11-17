@@ -1,7 +1,9 @@
 import socket
 
-
 class PhotoLengthNotNumber(BaseException):
+    pass
+
+class ConnectionLost(Exception):
     pass
 
 
@@ -26,15 +28,15 @@ class Buffer:
                 last_byte = curr_byte
                 curr_byte = self.connection.recv(1, *args)
                 read_bytes += 1
-                if curr_byte == '':
-                    return
-
+                ord(curr_byte)  #imitate end of read
                 if read_bytes <= aprox_length:
                     password.extend(curr_byte)
                 else:
                     pass
             except BlockingIOError as e:
                 raise e
+            except TypeError:
+                raise ConnectionLost
         try:
             return int(password)
         except ValueError:
@@ -48,11 +50,11 @@ class Buffer:
             try:
                 last_byte = curr_byte
                 curr_byte = self.connection.recv(1, *args)
-                if curr_byte == '':
-                    return
                 username_processed += ord(curr_byte)
             except BlockingIOError as e:
                 raise e
+            except TypeError:
+                raise ConnectionLost
 
         return username_processed - ord(b'\r') - ord(b'\n')
 
@@ -76,10 +78,14 @@ class Buffer:
         return True
 
     def read_byte(self, *args, fake=False):
-        data = self.connection.recv(1, *args)
-        if not fake:
-            self.buffer.extend(data)
-        return data
+        try:
+            data = self.connection.recv(1, *args)
+            ord(data)   # to imitate end of read
+            if not fake:
+                self.buffer.extend(data)
+            return data
+        except (TypeError, OSError) as e:
+            raise ConnectionLost
 
     def read_photo_length(self,):
         self.buffer = bytearray()

@@ -5,7 +5,7 @@ import traceback
 from _socket import socket, MSG_DONTWAIT
 
 import settings
-from Buffer import Buffer, PhotoLengthNotNumber
+from Buffer import Buffer, PhotoLengthNotNumber, ConnectionLost
 
 
 class RobotNotInUsername(Exception):
@@ -27,11 +27,11 @@ class BadCheckSum(Exception):
 class WrongSyntax(Exception):
     pass
 
+
 class WrongPassword(Exception):
     pass
 
 
-# noinspection PyMethodMayBeStatic
 class ClientHandler(threading.Thread):
     FIRT_MESSAGE = '200 LOGIN\r\n'
     PASSWORD_MESSAGE = '201 PASSWORD\r\n'
@@ -71,10 +71,13 @@ class ClientHandler(threading.Thread):
         self.connection.sendall(message.encode())
 
     def run(self,):
-        if not self.handle_login():
-            self.end_with_message(self.LOGIN_FAILED)
+        try:
+            if not self.handle_login():
+                self.end_with_message(self.LOGIN_FAILED)
+                return
+        except ConnectionLost:
+            print('---[CONNECTION LOST]-----' + str(self.ident) + '---' * 5)
             return
-
         while not self.stop_event.is_set():
             if time.time() - self.start_time >= (45 if settings.AWS else 1000000):
                 time.sleep(0.5)
@@ -97,8 +100,8 @@ class ClientHandler(threading.Thread):
                 time.sleep(0.5)
                 self.end_with_message(self.SYNTAX_ERROR)
                 break
-            except OSError:
-                print('---'*5 + str(self.ident) + '---'*5)
+            except ConnectionLost:
+                print('---[CONNECTION LOST]' + str(self.ident) + '---' * 5)
                 break
         return
 
@@ -108,20 +111,24 @@ class ClientHandler(threading.Thread):
         super().join(**kwargs)
 
     def handle_login(self):
-        self.send_message(self.FIRT_MESSAGE)
-        username = self.buffer.read_username()
-        print(str(username) + '+++++' + str(self.ident))
-        self.send_message(self.PASSWORD_MESSAGE)
-        password = self.buffer.read_password(aprox_length=len(str(username)))
-        print(str(password) + '!!!!!!' + str(self.ident))
         try:
-            if password == username and username >= 518: #Robot not in username
-                self.send_message(self.SECOND_MESSAGE)
-                return True
-            else:
+            self.send_message(self.FIRT_MESSAGE)
+            username = self.buffer.read_username()
+            print(str(username) + '+++++' + str(self.ident))
+            self.send_message(self.PASSWORD_MESSAGE)
+            password = self.buffer.read_password(aprox_length=len(str(username)))
+            print(str(password) + '!!!!!!' + str(self.ident))
+            try:
+                if password == username and username >= 518: #Robot not in username
+                    self.send_message(self.SECOND_MESSAGE)
+                    return True
+                else:
+                    return False
+            except WrongPassword:
                 return False
-        except WrongPassword:
-            return False
+        except OSError or TypeError:
+            # print('---' * 5 + str(self.ident) + '---' * 5)
+            raise ConnectionLost
 
     def handle_command(self):
         while True:
