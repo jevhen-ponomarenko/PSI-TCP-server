@@ -193,11 +193,13 @@ class ClientHandler(threading.Thread):
 
     def handle_info(self):
         try:
-            print((f'[INFO] -- {self.ident}', self.buffer.read_line()))
+            self.buffer.read_line()
+            print((f'[INFO] -- {self.ident}', self.buffer.buffer))
+            self.buffer.buffer = bytearray
             self.send_message(self.SECOND_MESSAGE)
         except PhotoLengthNotNumber:
             self.end_with_message(self.SYNTAX_ERROR)
-        except Exception as e:
-            print(f'---exc in read info---{e.__class__}')
+        except OSError:
+            print(f'---exc in read info---')
             self.send_message(self.SECOND_MESSAGE)
 
