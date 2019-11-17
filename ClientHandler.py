@@ -198,7 +198,7 @@ class ClientHandler(threading.Thread):
             self.send_message(self.SECOND_MESSAGE)
         except PhotoLengthNotNumber:
             self.end_with_message(self.SYNTAX_ERROR)
-        except Exception:
-            print('---exc in read info---')
-
+        except Exception as e:
+            print(f'---exc in read info---{e.__class__}')
+            self.send_message(self.SECOND_MESSAGE)
 
