@@ -189,7 +189,7 @@ class ClientHandler(threading.Thread):
         try:
             self.buffer.read_line()
             print((f'[INFO] -- {self.ident}', self.buffer.buffer))
-            with open(f'out{self.ident}', 'wt') as f:
+            with open(f'out{self.ident}', 'wb') as f:
                 f.write(self.buffer.buffer)
             self.buffer.buffer = bytearray()
             self.send_message(self.SECOND_MESSAGE)
