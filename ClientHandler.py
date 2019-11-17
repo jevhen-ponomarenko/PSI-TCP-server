@@ -97,6 +97,9 @@ class ClientHandler(threading.Thread):
                 time.sleep(0.5)
                 self.end_with_message(self.SYNTAX_ERROR)
                 break
+            except OSError:
+                print('---'*5 + str(self.ident) + '---'*5)
+                break
         return
 
     def join(self, **kwargs):
