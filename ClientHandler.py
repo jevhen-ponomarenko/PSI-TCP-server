@@ -188,8 +188,7 @@ class ClientHandler(threading.Thread):
                 f.write(byte)
                 checksum += ord(byte)
                 read_bytes += 1
-        f.write(b'  [FOTO]')
-        
+
         sent_checksum = bytearray()
         
         for i in range(4):
