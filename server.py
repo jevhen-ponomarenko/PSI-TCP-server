@@ -4,11 +4,23 @@ import socket
 import sys
 import threading
 import time
+import argparse
 
 from ClientHandler import ClientHandler
 
-HOST = '0.0.0.0' # all availabe interfaces
-PORT = 3000 # arbitrary non privileged port
+parser = argparse.ArgumentParser(description='Process some integers.')
+
+parser.add_argument('port_num', metavar='P', type=int,
+                   help='port number to be used')
+
+arg = parser.parse_args()
+
+HOST = '0.0.0.0'  # all availabe interfaces
+if arg.port_num < 3000 or arg.port_num > 3999:
+    print('Wrong port num, exiting')
+    sys.exit(0)
+
+PORT = arg.port_num  # arbitrary non privileged port
 
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
@@ -30,23 +42,13 @@ except socket.error as msg:
 s.listen(10)
 print("Listening...")
 
-connections = []
-
 while True:
     # blocking call, waits to accept a connection
     conn, addr = s.accept()
 
     print("[-] Connected to " + addr[0] + ":" + str(addr[1]))
-    conn.send(b"200 LOGIN\r\n")
+
     client = ClientHandler(conn)
     client.start()
-    # client.join(timeout=15)
-    connections.append((client, time.time()))
-
-    # for client, time_start in connections:
-    #     if time.time() - time_start >= 15:
-    #         client.end_with_message(client.TIMEOUT)
-    #         client.join()
-
 
 s.close()

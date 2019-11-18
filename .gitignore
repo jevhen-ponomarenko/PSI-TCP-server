@@ -1,3 +1,7 @@
 .idea
 venv-tcp/
 __pycache__
+photo*
+out*
+settings/local.py
+client.py

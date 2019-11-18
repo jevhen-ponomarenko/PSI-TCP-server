@@ -1,178 +1,116 @@
-import struct
+import socket
 
-class RobotNotInUsername(Exception):
+class PhotoLengthNotNumber(BaseException):
     pass
-class InfoOrFoto(Exception):
+
+class ConnectionLost(Exception):
     pass
-class FotoException(Exception):
-    pass
-class BadCheckSum(Exception):
-    pass
+
 
 class Buffer:
-    def __init__(self):
+    def __init__(self, connection: socket):
+        self.connection = connection
         self.buffer = bytearray()
-        self.photo_length_buffer = bytearray()
-        self.state = 0  # only 0 and 1 is allowed
-        self.photo = None
-        self.info = None
-        self.checksum = 0
-        self.sent_checksum = bytearray()
-        self.read_photo_bytes = 0
-        self.password = 0
-        self.last_byte = None
-        self.counting_pass = False
-        self.counting_checksum = False
-        self.data = bytearray()
-        # self.file = open(f"guru99.{self.__hash__()[0:5]}", "w+")
 
-    def process_byte(self, byte: bytes) -> bool or int:
-        # """
-        # Adds byte to a buffer, takes care of handling escape characters
-        # :param byte:
-        # :return: True on success, bytesarray() on escape seq
-        # """
-        if self.state == 0:
-            if self.counting_pass and byte == b'\n' and self.last_byte == b'\r':  # escape sequence
-                self.password -= ord(b'\r')  # bc \r is end seq, we dont want to count that
-                self.state = 1
-                self.counting_pass = False
-                self.buffer = bytearray()
-                return self.password
+    def __eq__(self, other: bytearray):
+        return self.buffer == other
 
-            if not self.counting_pass:
-                if byte == b'\n' and self.last_byte == b'\r':
-                    self.state = 1
-                    return self.password
-                self.last_byte = byte
-                self.buffer.extend(byte)
-                self.password += ord(byte)
-                if len(self.buffer) == 5:
-                    if not self.buffer == bytearray(b'Robot'):
-                        self.counting_pass = True
-                        raise RobotNotInUsername()
-                    else:
-                        self.counting_pass = True
-                        return None
-            else:
-                self.last_byte = byte
-                try:
-                    self.password += ord(byte)
-                except TypeError:
+    def __len__(self,):
+        return len(self.buffer)
+
+    def read_password(self,*args, aprox_length):
+        last_byte, curr_byte = b'', b''
+        password = bytearray()
+        read_bytes = 0
+
+        while curr_byte != b'\n' or last_byte != b'\r':
+            try:
+                last_byte = curr_byte
+                curr_byte = self.connection.recv(1, *args)
+                read_bytes += 1
+                ord(curr_byte)  #imitate end of read
+                if read_bytes <= aprox_length:
+                    password.extend(curr_byte)
+                else:
                     pass
-                return None
+            except BlockingIOError as e:
+                raise e
+            except TypeError:
+                raise ConnectionLost
+        try:
+            return int(password)
+        except ValueError:
+            return
 
-        elif self.state == 1:
-            if byte == b'\n' and self.last_byte == b'\r':  # escape sequence
-                self.state = 2
-                ret = self.buffer[:-1]
-                self.buffer = bytearray()  # flush it
-                return ret
-            else:
-                self.buffer.extend(byte)
-                self.last_byte =byte
-                return None
+    def read_username(self, *args):
+        last_byte,curr_byte = b'', b''
+        username_processed = 0
 
-        elif self.state == 2:
-            if not self.counting_checksum:
+        while curr_byte != b'\n' or last_byte != b'\r':
+            try:
+                last_byte = curr_byte
+                curr_byte = self.connection.recv(1, *args)
+                username_processed += ord(curr_byte)
+            except BlockingIOError as e:
+                raise e
+            except TypeError:
+                raise ConnectionLost
 
-                if len(self.buffer) < 5:
-                    if self.last_byte and self.last_byte == b'\r' and byte == b'\n':
-                        raise InfoOrFoto()
-                    self.last_byte = byte
-                    self.buffer.extend(byte)
-                elif len(self.buffer) == 5:
-                    if self.buffer != bytearray(b'INFO ') and self.buffer != bytearray(b'FOTO '):
-                        raise InfoOrFoto()
-                    elif self.buffer == bytearray(b'FOTO '):
-                        self.info = False
-                        self.photo = True
-                        self.photo_length_buffer.extend(byte)  # one byte of length is loaded in memory now
-                        self.buffer.extend(byte)  # too keep this bullshit working
-                    elif self.buffer == bytearray(b'INFO '):
-                        self.info = True
-                        self.photo = False
-                        self.buffer.extend(byte)
-                        self.last_byte = byte
-                elif byte == b' ' and self.photo:
-                    self.counting_checksum = True
-                elif byte != b' ' and self.photo:
-                    if self.last_byte and self.last_byte == b'\r' and byte == b'\n':
-                        raise FotoException()
-                    self.last_byte = byte
-                    self.photo_length_buffer.extend(byte)
-                elif self.last_byte == b'\r' and byte == b'\n':
-                    self.buffer = bytearray()  # i think its INFO case
-                    return True
-                elif not self.photo:
-                    self.last_byte = byte
-                else:
-                    raise InfoOrFoto()
-            elif self.counting_checksum and self.photo:
-                self.data.extend(byte)  # just for testing
-                if self.last_byte and self.last_byte == b'\r' and byte == b'\n' and self.read_photo_bytes <= int(self.photo_length_buffer) + 4:
-                    self.delete_photo_params()
-                    raise BadCheckSum()
-                self.last_byte = byte
-                if self.read_photo_bytes < int(self.photo_length_buffer):  # reading photo data
-                    self.checksum += ord(byte)
-                    self.read_photo_bytes += 1
-                elif self.read_photo_bytes < int(self.photo_length_buffer) + 4:  # reading last 4 bytes
+        return username_processed - ord(b'\r') - ord(b'\n')
 
-                    self.sent_checksum.extend(byte)
-                    self.read_photo_bytes += 1
-                    self.buffer = bytearray()  # flush the buffer
-                elif self.read_photo_bytes < int(self.photo_length_buffer) + 6:
-                    self.buffer.extend(byte)
-                    self.read_photo_bytes += 1
-                    if self.read_photo_bytes == int(self.photo_length_buffer) + 6:
-                        if self.buffer == b'\r\n':
-                            check = struct.unpack('>HH', self.sent_checksum)
-                            check = str(check[0]) + str(check[1])
-                            check = int(check)
-                            if self.checksum == check:
-                                print(str(self.data) + f'----{self.password}----')
-                                self.delete_photo_params()
-                                return True
-                            else:
-                                print(str(self.data) + f'----{self.password}----')
-                                self.delete_photo_params()
-                                raise BadCheckSum()
-                        else:
-                            if self.last_byte and self.last_byte == b'\r' and byte == b'\n':
-                                print(str(self.data) + f'----{self.password}----')
-                                self.delete_photo_params()
-                                raise BadCheckSum()
-                            self.last_byte = byte
-
-                else:
-                    raise FotoException()
-            elif not self.photo:  # reading INFO
-                self.data.extend(byte)
-                if byte == b'\n' and self.last_byte == b'\r':  # escape sequence
-                    print(f'--------'*5)
-                    print(f'----{self.password}----')
-                    print(self.data)
-                    print(f'--------' * 5)
-                    self.delete_photo_params()
-                    return True
-                else:
-                    self.last_byte = byte
-                    self.buffer.extend(byte)
-            else:
-                self.delete_photo_params()
-                raise InfoOrFoto()
-
-    def delete_photo_params(self):
-        """ gets called after reading FOTO msg, in all cases"""
+    def read_line(self, *args, fake=False):
         self.buffer = bytearray()
-        self.photo_length_buffer = bytearray()
-        self.photo = None
-        self.info = None
-        self.checksum = 0
-        self.sent_checksum = bytearray()
-        self.read_photo_bytes = 0
-        self.last_byte = None
-        self.counting_pass = False
-        self.counting_checksum = False
-        self.data = bytearray()
+        last_byte, curr_byte = b'', b''
+
+        while curr_byte != b'\n' or last_byte != b'\r':
+            try:
+                last_byte = curr_byte
+                if fake:
+                    curr_byte = self.read_byte(fake=True)
+                else:
+                    curr_byte = self.connection.recv(1, *args)
+                    self.buffer.extend(curr_byte)
+                if curr_byte == '':
+                    raise PhotoLengthNotNumber()
+
+            except BlockingIOError as e:
+                raise e
+        return True
+
+    def read_byte(self, *args, fake=False):
+        try:
+            data = self.connection.recv(1, *args)
+            ord(data)   # to imitate end of read
+            if not fake:
+                self.buffer.extend(data)
+            return data
+        except (TypeError, OSError) as e:
+            raise ConnectionLost
+
+    def read_photo_length(self,):
+        self.buffer = bytearray()
+        byte = b''
+        while byte != b' ':
+            try:
+                byte = self.read_byte(socket.MSG_DONTWAIT)
+            except BlockingIOError:
+                raise PhotoLengthNotNumber()
+        buff = self.buffer[:-1]  # remove extra space at the end
+        self.buffer = bytearray()
+        try:
+            num = int(buff)
+            if num <= 0:
+                raise PhotoLengthNotNumber()
+            return num
+        except ValueError:
+            raise PhotoLengthNotNumber()
+
+    def possible_start_info(self):
+        info = b'INFO '
+        length = min(len(self.buffer), 5)
+        return info[:length] == self.buffer[:length]
+
+    def possible_start_photo(self):
+        photo = b'FOTO '
+        length = min(len(self.buffer), 5)
+        return photo[:length] == self.buffer[:length]
