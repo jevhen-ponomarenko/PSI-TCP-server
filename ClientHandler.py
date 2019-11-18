@@ -10,9 +10,17 @@ from Buffer import RobotNotInUsername, InfoOrFoto, FotoException, BadCheckSum
 
 
 class ClientHandler(threading.Thread):
-    FIRST_MESSAGE = '201 PASSWORD\r\n'
+    """
+    Handles communication;
+    Communication is divided in two parts:
+        1.authentication
+        2.actual data transfer
+    Main logic is in the `run` function
+    """
+    FIRT_MESSAGE = '200 LOGIN\r\n'
+    TIMEOUUT = '501 SYNTAX ERROR\r\n'
+    PASSWORD_MESSAGE = '201 PASSWORD\r\n'
     SECOND_MESSAGE = '202 OK\r\n'
-
     LOGIN_FAILED = '500 LOGIN FAILED\r\n'
     SYNTAX_ERROR = '501 SYNTAX ERROR\r\n'
     TIMEOUT = '502 TIMEOUT\r\n'
@@ -27,7 +35,17 @@ class ClientHandler(threading.Thread):
         self.stop_event = threading.Event()
         self.username_wrong = None
         self.start_time = time.time()
+        t = threading.Timer(30, self.after_done)
+        t.start()
         super().__init__()
+
+    def after_done(self):
+        """
+        Callback, gets called 45 sec after start of communication
+        """
+        if self.stop_event.is_set():
+            return
+        self.end_with_message(self.TIMEOUUT)
 
     def end_with_message(self, message):
         self.connection.sendall(message.encode())
