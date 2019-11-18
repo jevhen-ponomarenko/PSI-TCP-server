@@ -33,6 +33,13 @@ class WrongPassword(Exception):
 
 
 class ClientHandler(threading.Thread):
+    """
+    Handles communication;
+    Communication is divided in two parts:
+        1.authentication
+        2.actual data transfer
+    Main logic is in the `run` function
+    """
     FIRT_MESSAGE = '200 LOGIN\r\n'
     PASSWORD_MESSAGE = '201 PASSWORD\r\n'
     SECOND_MESSAGE = '202 OK\r\n'
@@ -57,11 +64,18 @@ class ClientHandler(threading.Thread):
         super().__init__()
 
     def after_done(self):
+        """
+        Callback, gets called 45 sec after start of communication
+        """
         if self.stop_event.is_set():
             return
         self.end_with_message(self.SYNTAX_ERROR)
 
     def end_with_message(self, message):
+        """
+        :param message: msg to be sent
+        send message, close connection
+        """
         self.stop_event.set()
         self.connection.sendall(message.encode())
         self.connection.close()
@@ -71,6 +85,10 @@ class ClientHandler(threading.Thread):
         self.connection.sendall(message.encode())
 
     def run(self,):
+        """
+        main logic, close thread on return
+        :return:
+        """
         try:
             if not self.handle_login():
                 self.end_with_message(self.LOGIN_FAILED)
@@ -105,12 +123,11 @@ class ClientHandler(threading.Thread):
                 break
         return
 
-    def join(self, **kwargs):
-        if not self.stop_event.is_set():
-            self.stop_event.set()
-        super().join(**kwargs)
-
     def handle_login(self):
+        """
+        reads username and password; performs validation based on the sum of the username
+        :return: True on username == password
+        """
         try:
             self.send_message(self.FIRT_MESSAGE)
             username = self.buffer.read_username()
@@ -131,6 +148,9 @@ class ClientHandler(threading.Thread):
             raise ConnectionLost
 
     def handle_command(self):
+        """
+        handle according command, throw Exception on wrong syntax
+        """
         while True:
             curr_byte = self.buffer.read_byte()
             if curr_byte == '':
@@ -150,6 +170,11 @@ class ClientHandler(threading.Thread):
                 raise WrongSyntax()
 
     def handle_photo(self):
+        """
+        Reads FOTO msg: number of bytes to read, data, checksum
+        Performs validation of checksum and data checksum;
+        saves the photo in the file named according to thread ident
+        """
         with open(f'out{self.ident}', 'wb') as f:
             bytes_to_read = self.buffer.read_photo_length()
             read_bytes = 0
@@ -187,6 +212,10 @@ class ClientHandler(threading.Thread):
             raise BadCheckSum()
 
     def handle_info(self):
+        """
+        read info msg
+        saves the msg in the file named according to thread ident
+        """
         try:
             self.buffer.read_line()
             print((f'[INFO] -- {self.ident}', self.buffer.buffer))
